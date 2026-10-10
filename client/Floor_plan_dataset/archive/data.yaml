@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 3
+names: ['door', 'window', 'zone']
+
+roboflow:
+  workspace: umair-ab9ex
+  project: floor-plans-500-xqdyk
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/umair-ab9ex/floor-plans-500-xqdyk/dataset/1
