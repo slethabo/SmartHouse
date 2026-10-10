@@ -3,5 +3,6 @@ node_modules/
 server/data/
 client/dist/
 coverage/
+tmp/
 *.log
 .DS_Store

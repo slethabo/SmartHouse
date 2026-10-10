@@ -33,16 +33,10 @@ export function HelpDrawer({ open, onClose }) {
             <Icon name="x" />
           </button>
         </div>
-        {STRINGS.help.sections.map((section) => (
-          <section key={section.heading}>
-            <h3>{section.heading}</h3>
-            <ul>
-              {section.items.map((item, i) => (
-                <li key={i}>{item}</li>
-              ))}
-            </ul>
-          </section>
-        ))}
+        <section><h3>Start with your story</h3><p>Create a project, then answer questions about your plot, budget, household, and daily routines.</p></section>
+        <section><h3>Save and refine</h3><p>Save each step as you go. Review your answers, confirm the brief, and explore a room concept with illustrative costs.</p></section>
+        <section><h3>Understand the preview</h3><p>The floor plan and house exterior use the same footprint. Show cutaway to inspect the room arrangement. These are concept previews; detailed architectural and construction checks are still to come.</p></section>
+        <section><h3>Saved on your device</h3><p>No account is needed. Projects stay in this browser. No backend or database is needed. The design library contains earlier reference houses.</p></section>
         {rates?.items?.length > 0 && (
           <section>
             <h3>{STRINGS.help.currentRates}</h3>

@@ -1,0 +1,23 @@
+const { Router } = require('express');
+const { z } = require('zod');
+const auth = require('../modules/auth');
+const validate = require('../middleware/validate');
+const asyncHandler = require('../middleware/asyncHandler');
+const { ok } = require('../utils/response');
+const service = require('../modules/projects/service');
+const { answerSchema } = require('../modules/projects/consultation');
+const router = Router();
+router.use(auth.requireAuth);
+router.param('projectId', (req, _res, next, value) => {
+  const parsed = z.coerce.number().int().positive().max(2147483647).safeParse(value);
+  if (!parsed.success) return next(require('../utils/errors').badRequest('Invalid project ID.'));
+  req.projectId = parsed.data;
+  next();
+});
+router.get('/', asyncHandler(async (req, res) => ok(res, await service.list(req.user.id))));
+router.post('/', validate(z.object({ title: z.string().trim().min(1).max(120) }).strict()), asyncHandler(async (req, res) => ok(res, await service.create(req.user.id, req.validated.title), 'Project created.', 201)));
+router.get('/:projectId', asyncHandler(async (req, res) => ok(res, await service.detail(req.projectId, req.user.id))));
+router.get('/:projectId/consultation', asyncHandler(async (req, res) => ok(res, (await service.detail(req.projectId, req.user.id)).draft)));
+router.put('/:projectId/consultation', validate(z.object({ expectedRevision: z.number().int().nonnegative(), answers: answerSchema }).strict()), asyncHandler(async (req, res) => ok(res, await service.save(req.projectId, req.user.id, req.validated), 'Draft saved.')));
+router.post('/:projectId/briefs', validate(z.object({ draftRevision: z.number().int().nonnegative(), acknowledged: z.literal(true) }).strict()), asyncHandler(async (req, res) => ok(res, await service.confirm(req.projectId, req.user.id, req.validated), 'Design brief confirmed.', 201)));
+module.exports = router;

@@ -23,6 +23,8 @@ router.get(
 );
 
 router.use('/auth', require('./auth.routes'));
+router.get('/consultation/config', require('../modules/auth').requireAuth, (_req, res) => ok(res, { version: 1, steps: require('../modules/projects/consultation').steps }));
+router.use('/projects', require('./projects.routes'));
 router.use('/recommendations', require('./recommendation.routes'));
 router.use('/plans', require('./plans.routes'));
 router.use('/admin', require('./admin.routes'));

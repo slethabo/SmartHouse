@@ -7,6 +7,7 @@ import { FindHouseForm } from '../components/forms/FindHouseForm';
 import { Banner } from '../components/ui/Banner';
 import { useLastSearch } from '../hooks/useLastSearch';
 import { useAuth } from '../context/AuthContext';
+import { Button } from '../components/ui/Button';
 
 /**
  * Home: the "Find my house" form. Submitting navigates to /recommendations
@@ -34,6 +35,7 @@ export function DashboardPage() {
   return (
     <>
       <PageHeader title={STRINGS.dashboard.title} />
+      <section className="card" style={{ marginBottom: 24 }}><h2>Design a home around your life</h2><p>Start an architectural consultation, save your requirements, and explore a personalised schematic concept.</p><Button to="/projects">Start your house project</Button></section>
       <div className="hero">
         <div className="hero__intro">
           <h1 style={{ marginTop: 0 }}>{STRINGS.dashboard.heading}</h1>

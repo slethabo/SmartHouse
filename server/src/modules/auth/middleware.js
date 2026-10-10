@@ -21,6 +21,10 @@ function extractToken(req) {
  */
 async function attachUser(req, _res, next) {
   try {
+    if (config.prototypeMode) {
+      req.user = await service.getPrototypeUser();
+      return next();
+    }
     const token = extractToken(req);
     const payload = token ? service.verifyToken(token) : null;
     if (payload) {

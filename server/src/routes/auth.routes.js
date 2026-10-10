@@ -5,6 +5,12 @@ const validate = require('../middleware/validate');
 const asyncHandler = require('../middleware/asyncHandler');
 
 const router = Router();
+router.use((req, res, next) => {
+  if (require('../config').prototypeMode && req.method === 'POST') {
+    return require('../utils/response').ok(res, { user: req.user, prototypeMode: true }, 'The prototype uses a shared workspace. No login is needed.');
+  }
+  next();
+});
 
 // Slow down brute-force attempts on login/register.
 const authLimiter = rateLimit({

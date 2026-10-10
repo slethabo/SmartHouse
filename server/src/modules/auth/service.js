@@ -9,6 +9,18 @@ const { conflict, unauthorized, forbidden } = require('../../utils/errors');
 
 const SALT_ROUNDS = 10;
 
+/** Shared identity for the login-free prototype; never uses a real account. */
+async function getPrototypeUser() {
+  const db = require('../../db/connection');
+  const { rows } = await db.query(
+    `INSERT INTO users(full_name,email,password_hash,role)
+     VALUES('Prototype Workspace','prototype@smarthouse.invalid','disabled','admin')
+     ON CONFLICT(email) DO UPDATE SET full_name=EXCLUDED.full_name, role='admin', is_active=TRUE
+     RETURNING id, full_name, email, role, is_active`
+  );
+  return rows[0];
+}
+
 /**
  * Strip anything sensitive before sending a user to the client.
  * @param {object} user
@@ -83,4 +95,4 @@ async function getUserById(id) {
   return toPublicUser(user);
 }
 
-module.exports = { register, login, getUserById, signToken, verifyToken, toPublicUser };
+module.exports = { register, login, getUserById, getPrototypeUser, signToken, verifyToken, toPublicUser };

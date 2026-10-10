@@ -9,11 +9,14 @@
   ],
   "scripts": {
     "setup": "npm install",
-    "dev": "concurrently -k -n server,client -c blue,green \"npm:dev --workspace server\" \"npm:dev --workspace client\"",
+    "dev": "npm run dev --workspace client",
     "build": "npm run build --workspace client",
-    "start": "npm run build && npm start --workspace server",
+    "start": "npm run build && npm run preview --workspace client",
     "test": "npm test --workspace server",
-    "lint": "npm run lint --workspace server && npm run lint --workspace client"
+    "lint": "npm run lint --workspace server && npm run lint --workspace client",
+    "dev:full": "concurrently -k -n server,client -c blue,green \"npm:dev --workspace server\" \"npm:dev --workspace client\"",
+    "start:full": "npm run build && npm start --workspace server",
+    "test:prototype": "node --test client/tests/prototype.test.cjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

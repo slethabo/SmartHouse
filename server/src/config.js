@@ -10,6 +10,8 @@ const isProduction = process.env.NODE_ENV === 'production';
 const config = {
   env: process.env.NODE_ENV || 'development',
   isProduction,
+  // Authentication is intentionally disabled throughout this prototype.
+  prototypeMode: true,
   port: Number(process.env.PORT) || 3001,
   /** Full connection string for an external PostgreSQL server (optional). */
   databaseUrl: process.env.DATABASE_URL || '',
@@ -31,7 +33,7 @@ const config = {
   maxPlotCoverage: Number(process.env.MAX_PLOT_COVERAGE) || 0.5,
 };
 
-if (isProduction && !config.jwt.secret) {
+if (isProduction && !config.prototypeMode && !config.jwt.secret) {
   throw new Error('JWT_SECRET must be set in production.');
 }
 

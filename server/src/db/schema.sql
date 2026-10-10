@@ -58,3 +58,28 @@ CREATE TABLE IF NOT EXISTS saved_plans (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (user_id, plan_id)
 );
+
+-- Additive consultation foundation: existing catalogue records are preserved.
+CREATE TABLE IF NOT EXISTS projects (
+  id SERIAL PRIMARY KEY,
+  owner_id INTEGER NOT NULL REFERENCES users(id),
+  title VARCHAR(120) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_projects_owner ON projects(owner_id, created_at DESC);
+CREATE TABLE IF NOT EXISTS consultation_drafts (
+  project_id INTEGER PRIMARY KEY REFERENCES projects(id),
+  revision INTEGER NOT NULL DEFAULT 0 CHECK (revision >= 0),
+  answers JSONB NOT NULL DEFAULT '{}',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS design_briefs (
+  id SERIAL PRIMARY KEY,
+  project_id INTEGER NOT NULL REFERENCES projects(id),
+  version INTEGER NOT NULL CHECK (version > 0),
+  draft_revision INTEGER NOT NULL,
+  brief JSONB NOT NULL,
+  confirmed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(project_id, version),
+  UNIQUE(project_id, draft_revision)
+);

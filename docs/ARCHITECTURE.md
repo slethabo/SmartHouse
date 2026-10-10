@@ -1,162 +1,89 @@
-# Architecture
+# Target System Architecture
 
-Smart House Design & Cost Recommendation System — FivePlusOne Devs (CSC 312)
-
-The system is a layered, modular client–server application. Each server module owns its own data access and business rules and exposes a small public interface (`index.js`). Modules call each other only through those interfaces — never by reaching into internal files.
+**Status:** Proposed architecture for the revised platform. Existing modules and catalogue routes remain in the source until implementation. See [roadmap](IMPLEMENTATION_PLAN.md).
 
 ## System overview
 
+Retain the existing React/Express/PostgreSQL foundation. Introduce project, consultation, brief, generation, design, validation, visualisation, and export responsibilities. Rendering and costing use one canonical design representation. The initial 3D library and export renderer will be selected after a prototype.
+
 ```mermaid
 flowchart LR
-    subgraph Browser
-        UI[React SPA<br/>client/src]
-    end
-
-    subgraph Server["Node.js + Express (server/src)"]
-        R[routes/*<br/>HTTP wiring only]
-        MW[middleware<br/>validate · asyncHandler · errorHandler]
-        subgraph Modules
-            AUTH[auth]
-            REC[recommendation]
-            COST[cost]
-            PLANS[plans]
-            ADMIN[admin]
-        end
-        DB[(db/connection<br/>pg pool)]
-    end
-
-    PG[(PostgreSQL<br/>embedded or DATABASE_URL)]
-
-    UI -- "fetch /api/* (JSON, cookie JWT)" --> R
-    R --> MW --> Modules
-    AUTH --> DB
-    REC --> COST
-    REC --> DB
-    PLANS --> COST
-    PLANS --> DB
-    ADMIN --> COST
-    ADMIN --> PLANS
-    ADMIN --> DB
-    COST --> DB
-    DB --> PG
+    UI[React consultation and design workspace] --> API[Express routes and authorisation]
+    API --> P[Projects and versioned briefs]
+    API --> G[Generation orchestration]
+    G --> E[Bounded layout engine]
+    E --> V[Geometry and constraint validation]
+    G --> C[Quantity and allowance costing]
+    G --> D[Immutable design versions]
+    P --> DB[(PostgreSQL)]
+    D --> DB
+    A[Configuration administration] --> R[Published rules components and pricing]
+    R --> DB
+    R --> G
+    D --> UI
+    D --> X[Concept package export]
+    X --> S[Protected artifact storage]
 ```
 
-## Module diagram (server)
+## Module responsibilities
 
-```mermaid
-flowchart TB
-    subgraph auth["modules/auth"]
-        A1[validators.js<br/>zod schemas] --> A2[controller.js]
-        A2 --> A3[service.js<br/>register · login · JWT]
-        A3 --> A4[repository.js<br/>users SQL]
-        A5[middleware.js<br/>attachUser · requireAuth · requireRole]
-    end
+| Module | Responsibility | Boundary |
+|---|---|---|
+| auth | Sessions and role checks | Reuse current foundations; enforce project ownership in each resource service. |
+| projects | Owned design workspaces | No generation mathematics. |
+| consultation/briefs | Conditional answers, support classification, confirmation, revisions | Must not silently convert unknown facts into verified facts. |
+| generation | Pin configurations, run bounded search, persist outcomes | Does not bypass validation or overwrite saved designs. |
+| geometry/validation | Buildable envelope, overlap, dimensions, circulation, requirement checks | Pure functions with no database or HTTP dependence. |
+| designs | Immutable geometry/specification snapshots and comparisons | Every view resolves a specific version. |
+| cost | Quantities, rates, allowances, inclusions, exclusions, contingency | Uses pinned pricing; does not confuse the existing percentage split with measured quantities. |
+| visualisation | Floor plan and 3D projections of canonical geometry | No independent invented layout. |
+| exports | Brief, views, plan, estimate, manifest | Access controlled; must not mix versions. |
+| admin/configuration | Publish validated rule, component, style, and pricing releases | Published configurations are immutable. |
 
-    subgraph cost["modules/cost"]
-        C1[estimator.js<br/>pure: estimateCost · buildBreakdown · estimateAllLevels]
-        C2[service.js<br/>getRateMap · estimateForPlan · updateRate]
-        C3[repository.js<br/>cost_rates SQL]
-        C2 --> C1
-        C2 --> C3
-    end
+Controllers translate HTTP requests; services orchestrate and authorise; repositories execute parameterised SQL; pure engines calculate. Cross-module calls should use explicit public interfaces. The current `recommendation` and `plans` modules remain legacy catalogue functionality until migration decisions are implemented.
 
-    subgraph recommendation["modules/recommendation"]
-        R1[engine.js<br/>pure: recommend]
-        R2[service.js<br/>load plans + rates · record search]
-        R2 --> R1
-    end
+## Shared design contract
 
-    subgraph plans["modules/plans"]
-        P1[controller.js] --> P2[service.js<br/>browse · detail · saved]
-        P2 --> P3[repository.js]
-    end
+A design snapshot contains `schemaVersion`, `designId`, `projectId`, `briefId`, generator version and seed, rule/component/pricing release IDs, site geometry, local coordinate frame, rooms, walls, openings, roof parameters, supported finishes, requirement satisfaction results, validation report, and calculation inputs. Geometry uses metres in a documented local origin; north orientation is a separate value that may be unknown.
 
-    subgraph admin["modules/admin"]
-        D1[controller.js] --> D2[service.js<br/>users · plan CRUD · rates]
-        D2 --> D3[repository.js]
-    end
+Rooms use stable IDs and polygons (initially rectangles); walls and openings have explicit hosts and dimensions. Store both internal usable area and gross footprint/floor area with distinct definitions. Costing uses the relevant documented area or quantity rather than assuming all room areas sum to gross construction area. Compare/round using configured tolerances; display rounding must not determine feasibility.
 
-    R1 -. "estimateAllLevels (injected)" .-> C1
-    R2 -. "cost.getRateMap / cost.estimateAllLevels" .-> C2
-    P2 -. "cost.getRateMap / estimateForPlan" .-> C2
-    D2 -. "cost.listRates / updateRate" .-> C2
-    D1 -. "plans.browse" .-> P2
-```
+Doors must connect supported spaces and satisfy configured widths/clearances. Connectivity requires a graph traversal from the entrance; non-overlapping rooms alone do not demonstrate access. Privacy and appearance checks are limited to explicitly implemented rules.
 
-Dotted arrows are the only cross-module dependencies, and each goes through the target module's `index.js`.
-
-## Request flow (example: Find my house)
+## Generation lifecycle
 
 ```mermaid
 sequenceDiagram
-    participant U as User (browser)
-    participant RT as routes/recommendation.routes.js
-    participant V as middleware/validate (zod)
-    participant RS as recommendation/service.js
-    participant CM as cost (public interface)
-    participant EN as recommendation/engine.js
-    participant DB as db/connection
-
-    U->>RT: POST /api/recommendations {plotSizeM2, budget, filters}
-    RT->>V: validate body
-    V-->>RT: req.validated
-    RT->>RS: recommendForUser(userId, input)
-    RS->>DB: SELECT active house_plans
-    RS->>CM: getRateMap()
-    CM->>DB: SELECT cost_rates
-    RS->>EN: recommend(input, plans, rates, {estimateAllLevels})
-    EN->>CM: estimateAllLevels(floor_area, rates)  (per candidate)
-    EN-->>RS: {matches, noMatch, meta}
-    RS->>DB: INSERT user_searches
-    RS-->>RT: result
-    RT-->>U: {success:true, message, data}
+    participant U as Homeowner
+    participant B as Brief service
+    participant G as Generation service
+    participant E as Layout engine
+    participant C as Cost engine
+    participant D as Design store
+    U->>B: Confirm valid brief
+    B-->>U: Immutable brief ID
+    U->>G: Generate with brief ID
+    G->>G: Check ownership and pin releases
+    G->>E: Brief, components, rules, seed, bounds
+    loop Within attempt and time limits
+        E->>E: Assemble geometry and check constraints
+        E->>C: Estimate geometrically valid candidate
+        C-->>E: Lines, assumptions, total
+        E->>E: Check budget and rank preferences
+    end
+    E-->>G: Feasible options or explicit outcome
+    G->>D: Save snapshots and run report
+    G-->>U: Run status and design IDs
 ```
 
-## Layers
+Run states: queued -> running -> completed, no_feasible_option, exhausted, or failed. A terminal `exhausted` outcome means the bounded search did not establish a solution. Operational failures are distinguished from design conflicts. Progress polling is sufficient initially; a separate worker/queue is optional if benchmarks justify it. CPU work must be bounded and arranged so normal HTTP requests remain responsive.
 
-| Layer | Location | Responsibility | Must not |
-|---|---|---|---|
-| Presentation | `client/src/pages`, `components` | Render, validate inputs for instant feedback, show loading/empty/error states | Contain pricing or matching rules |
-| API client | `client/src/services` | One fetch wrapper (`api.js`) + one file per resource | Know about React state |
-| Routes | `server/src/routes` | Map URLs to validators, auth guards and controllers | Contain business logic |
-| Controllers | `modules/*/controller.js` | Translate HTTP ↔ service calls, set cookies, pick status codes | Run SQL |
-| Services | `modules/*/service.js` | Business rules, orchestration, authorisation details | Build HTTP responses |
-| Pure engines | `cost/estimator.js`, `recommendation/engine.js` | Deterministic calculations, fully unit-tested without a database | Perform I/O |
-| Repositories | `modules/*/repository.js` | Parameterised SQL only | Contain rules |
-| DB | `server/src/db` | Pool, schema, seed, embedded-Postgres bootstrap | Be imported by the client |
+## Consistency and security
 
-## Cross-cutting concerns
+Save a design with its validation and estimate atomically. If required pricing is missing, do not mark the design feasible. Confirmed briefs and published releases are immutable; edits create new versions. Exports include a manifest of version IDs and geometry checksum. Regenerating visual assets reads the saved geometry, not a fresh generation request.
 
-- **Response envelope**: every endpoint returns `{ success, message, data }` (`utils/response.js`). All thrown errors are translated by `middleware/errorHandler.js` into the same shape with friendly, non-technical messages; stack traces are logged server-side only.
-- **Validation**: zod schemas on the server (`validators.js` per module) and mirrored plain-JS checks on the client (`client/src/utils/validation.js`). Strings are trimmed, emails lower-cased, numbers coerced and bounded.
-- **Auth**: bcrypt password hashes; JWT in an `httpOnly`, `SameSite=Lax` cookie; `attachUser` runs on every request, `requireAuth` / `requireRole('admin')` guard routes. Login/register are rate-limited.
-- **Security headers**: helmet, CORS restricted to the client origin, JSON body limit 100 kB, no `x-powered-by`.
-- **Config/secrets**: `server/src/config.js` reads environment variables only (`.env` locally). `JWT_SECRET` is mandatory in production.
-- **Database bootstrap**: `db/init.js` applies `schema.sql` on every start (idempotent) and `seed.sql` once (when `users` is empty). Without `DATABASE_URL`, `db/embedded.js` starts a real PostgreSQL from the `embedded-postgres` package so the app runs with one command on any machine.
-- **i18n-readiness**: every UI string lives in `client/src/constants/strings.js`; money/area formatting goes through `Intl.NumberFormat('en-ZA')` in `client/src/utils/format.js`.
+JWT cookie authentication and role checks already exist. New services must check ownership even when a child ID is supplied directly. Stored downloads require the same protection. Bound input size, search complexity, and export work. If uploads are later introduced, define a separate validated upload contract rather than assuming arbitrary files are trusted.
 
-## Client structure
+## Migration boundaries
 
-```
-client/src
-├── App.jsx                 routes + providers
-├── constants/              strings.js (all copy), config.js (presets, keys)
-├── context/                AuthContext, ToastContext
-├── hooks/                  useFetch, useLastSearch, useSavePlan, useDocumentTitle
-├── services/               api.js + auth/plans/recommendation/admin services
-├── components/
-│   ├── layout/             AppLayout, TopNav, BottomTabs, Breadcrumbs, PageHeader, HelpDrawer
-│   ├── ui/                 Button, FormField, Modal, ConfirmDialog, Toast, Spinner, EmptyState, Banner, Tooltip, Icon
-│   ├── plans/              PlanCard, PlanImage, MatchBadge, CostBreakdown
-│   └── forms/              FindHouseForm, PlanForm
-├── pages/                  Login, Register, Dashboard, Recommendations, PlanDetail, Browse, SavedPlans, NotFound, admin/*
-├── styles/                 tokens.css (design tokens), global.css, components.css, pages.css
-└── utils/                  format.js, validation.js
-```
-
-## Extending the system
-
-- **New rule in the recommendation** → change `engine.js` and add a Jest case in `server/tests/recommendation.test.js`; nothing else needs to know.
-- **New cost component** (e.g. VAT) → extend `BREAKDOWN_SHARES` in `estimator.js`; the client's breakdown list reads keys from the response.
-- **New resource** → create `modules/<name>/{repository,service,controller,validators,index}.js`, mount a router in `routes/index.js`, add a service file in `client/src/services`.
-- **Different database host** → set `DATABASE_URL`; no code changes.
+The current cost module estimates `floor area * finish rate`, with fixed percentage categories and contingency included in that total. The target estimator uses explicit quantity/area/allowance lines and separately documented contingency. These are different calculation models and must be versioned. Existing saved catalogue plans cannot be relabelled generated designs because they do not have canonical room geometry or confirmed briefs.

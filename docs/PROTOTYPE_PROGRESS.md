@@ -1,0 +1,11 @@
+# Frontend Prototype Progress
+
+The active prototype runs entirely in React/Vite, with localStorage persistence and illustrative catalogue/pricing data. No backend, PostgreSQL, or login is required. Run `npm run dev` and open the displayed URL.
+
+Users can create projects, complete conditional consultation questions, save/resume drafts, confirm briefs, explore schematic room arrangements and costs, and download SVG floor plans and JSON summaries. Library browsing, saved designs, and demo rate edits also run locally. Data stays in this browser; previous backend records remain separate and unchanged.
+
+The prototype now uses a front living zone and a central hallway with bedrooms and bathrooms on either side. Floor plans show indicative furniture, door swings, windows, and dimensions. The concept now opens with an interactive Three.js house viewer: drag/touch rotation, wheel/pinch zoom, overview/front/above camera presets, and roof removal with lowered walls for interior inspection. The mesh geometry comes from the shared floor-plan data. A front elevation fallback is shown when WebGL is unavailable. Static exterior views remain available. Front, side, and perspective views show the selected architectural style and corresponding openings. Floor plans and cutaway views are available separately. Materials and landscaping are illustrative. Plot and budget conflicts are shown explicitly. This is an adaptable layout pattern, not a full 3D editor or validated construction drawing. Detailed clearances, engineering, accessibility and regulatory checks remain future work.
+
+Backend specifications and source are retained for later implementation. The frontend demo adapter in `client/src/demo/store.js` now supplies the operations previously served by the API. `npm run test:prototype` verifies persistence, confirmation, conflict handling, local catalogue operations, and storage failure feedback without a network.
+
+Project pages now separate Your house from Edit brief. Confirmed projects open in the design workspace. Brief review sections and design explanations are collapsed by default; consultation actions stay near the viewport edge. The dashboard header and 3D viewport are compact to reduce vertical scrolling.

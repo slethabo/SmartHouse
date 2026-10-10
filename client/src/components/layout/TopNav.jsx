@@ -1,31 +1,22 @@
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../context/ToastContext';
 import { STRINGS } from '../../constants/strings';
 import { Icon } from '../ui/Icon';
 import { Button } from '../ui/Button';
 
 export const NAV_ITEMS = [
-  { to: '/', label: STRINGS.nav.home, icon: 'home', end: true },
-  { to: '/recommendations', label: STRINGS.nav.recommendations, icon: 'sliders' },
-  { to: '/browse', label: STRINGS.nav.browse, icon: 'grid' },
-  { to: '/saved', label: STRINGS.nav.saved, icon: 'heart' },
-  { to: '/admin', label: STRINGS.nav.admin, icon: 'shield', adminOnly: true },
+  { to: '/', label: 'My projects', shortLabel: 'Projects', icon: 'house', end: true },
+  { to: '/browse', label: 'Design library', shortLabel: 'Library', icon: 'grid' },
+  { to: '/saved', label: 'Saved designs', shortLabel: 'Saved', icon: 'heart' },
+  { to: '/admin', label: 'Manage demo', shortLabel: 'Manage', icon: 'sliders', adminOnly: true },
 ];
 
 /** Persistent desktop navigation ("Where can I go?"). */
 export function TopNav({ onOpenHelp }) {
-  const { user, isAdmin, logout } = useAuth();
-  const toast = useToast();
-  const navigate = useNavigate();
+  const { user, isAdmin } = useAuth();
+  const location = useLocation();
 
   const items = NAV_ITEMS.filter((i) => !i.adminOnly || isAdmin);
-
-  const handleLogout = async () => {
-    await logout();
-    toast.info(STRINGS.auth.loggedOut);
-    navigate('/login');
-  };
 
   return (
     <header className="topnav">
@@ -38,7 +29,7 @@ export function TopNav({ onOpenHelp }) {
         {user && (
           <nav className="topnav__links" aria-label="Main">
             {items.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => `topnav__link ${isActive ? 'is-active' : ''}`}>
+              <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => `topnav__link ${isActive || (item.to === '/' && location.pathname.startsWith('/projects')) ? 'is-active' : ''}`}>
                 {item.label}
               </NavLink>
             ))}
@@ -54,29 +45,7 @@ export function TopNav({ onOpenHelp }) {
               {STRINGS.app.help}
             </span>
           </Button>
-          {user ? (
-            <>
-              <span className="topnav__user">
-                <Icon name="user" size={18} />
-                <span>
-                  {user.full_name.split(' ')[0]}
-                  {isAdmin && <span className="badge badge--info" style={{ marginLeft: 6 }}>admin</span>}
-                </span>
-              </span>
-              <Button variant="secondary" size="sm" icon="logout" onClick={handleLogout}>
-                {STRINGS.app.logout}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button variant="ghost" size="sm" to="/login">
-                {STRINGS.nav.login}
-              </Button>
-              <Button variant="primary" size="sm" to="/register">
-                {STRINGS.nav.register}
-              </Button>
-            </>
-          )}
+          <span className="badge badge--info">Local prototype</span>
         </div>
       </div>
     </header>

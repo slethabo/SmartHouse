@@ -36,7 +36,7 @@ async function logout(_req, res) {
 }
 
 async function me(req, res) {
-  return ok(res, { user: req.user || null });
+  return ok(res, { user: req.user || null, prototypeMode: config.prototypeMode });
 }
 
 module.exports = { register, login, logout, me };
