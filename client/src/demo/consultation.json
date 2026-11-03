@@ -234,7 +234,17 @@
             "Minimalist"
           ],
           "required": true,
-          "hint": "This changes the roof profile and exterior palette. Floor-plan arrangement and room sizes are selected separately."
+          "hint": "This guides the exterior palette. Choose a roof system below; floor-plan arrangement and room sizes are selected separately."
+        },
+        {
+          "key": "roofForm",
+          "label": "Preferred roof system",
+          "options": [
+            "Automatic",
+            "Intersecting gables",
+            "Multi-hip"
+          ],
+          "hint": "Automatic uses multi-hip for Traditional style and intersecting gables for Modern or Minimalist. Roof sections are derived from the house footprint."
         },
         {
           "key": "layoutPreference",

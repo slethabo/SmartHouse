@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { placeFurniture } from './furniture';
-import { roofPanels, exteriorHeight, roofHeight } from './architecture';
+import { roofPanels, roofSections, exteriorHeight, roofHeight } from './architecture';
 
 /** Build real meshes from the shared floor-plan geometry. No network assets. */
 export function buildHouseModel(h) {
@@ -20,6 +20,18 @@ export function buildHouseModel(h) {
     mesh.position.set(x + w / 2, y + height / 2, z + depth / 2);
     mesh.castShadow = true; mesh.receiveShadow = true; mesh.name = name || '';
     group.add(mesh); return mesh;
+  }
+  function polygon(group, points, material, name) {
+    if (points.length < 3) return;
+    const positions = points.flatMap(([x,y,z]) => [x,y,z]);
+    const indices = [];
+    for (let index = 1; index < points.length - 1; index++) indices.push(0,index,index+1);
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions,3));
+    geometry.setIndex(indices); geometry.computeVertexNormals();
+    const mesh = new THREE.Mesh(geometry,material);
+    mesh.name=name; mesh.castShadow=true; mesh.receiveShadow=true; group.add(mesh);
+    return mesh;
   }
   function wall(group, x, z, length, axis, openings = [], heights = [2.8,2.8]) {
     if (length <= .01) return;
@@ -49,11 +61,36 @@ export function buildHouseModel(h) {
     wall(segment.exterior ? exterior : interior, segment.x, segment.y, segment.length, axis === 'x' ? 'x' : 'z', openings, segment.exterior ? [exteriorHeight(h,segment),exteriorHeight(h,segment,segment.x+(axis==='x'?segment.length:0))] : [2.8,2.8]);
     if(!segment.exterior&&segment.roomIds.length===2){
       const pair=segment.roomIds.map(id=>h.rooms.find(r=>r.id===id));
-      const heights=pair.map(r=>roofHeight(h,r,segment.x)-.16).sort((a,b)=>a-b);
+      const heights=pair.map(r=>roofHeight(h,r,segment.x,segment.y)-.16).sort((a,b)=>a-b);
       if(heights[1]-heights[0]>.05){
         const step=box(exterior,segment.x-(axis==='x'?0:.04),heights[0],segment.y-(axis==='x'?.04:0),axis==='x'?segment.length:.08,
           heights[1]-heights[0],axis==='x'?.08:segment.length,glass,'clerestory');
         step.userData.roomIds=segment.roomIds;
+      }
+    }
+  }
+  const houseRoofSections = roofSections(h);
+  for (const section of houseRoofSections.filter((item) => item.form === 'Intersecting gables')) {
+    const { x0, x1, y0, y1 } = section.buildingBounds;
+    const midX = (x0 + x1) / 2, midY = (y0 + y1) / 2;
+    const triangleAtX = (x) => [[x,2.78,y0],[x,2.78,y1],[x,section.ridgeHeight,midY]];
+    const triangleAtY = (y) => [[x0,2.78,y],[x1,2.78,y],[midX,section.ridgeHeight,y]];
+    const ends = section.ridgeAxis === 'x'
+      ? [
+        { axis: 'x', coordinate: x0, start: y0, end: y1, faces: [triangleAtX(x0),triangleAtX(x0-.08)] },
+        { axis: 'x', coordinate: x1, start: y0, end: y1, faces: [triangleAtX(x1),triangleAtX(x1+.08)] },
+      ]
+      : [
+        { axis: 'y', coordinate: y0, start: x0, end: x1, faces: [triangleAtY(y0),triangleAtY(y0-.08)] },
+        { axis: 'y', coordinate: y1, start: x0, end: x1, faces: [triangleAtY(y1),triangleAtY(y1+.08)] },
+      ];
+    for (const { faces } of ends) {
+      const [front,back] = faces;
+      polygon(exterior,front,wallMaterial,'gable-end');
+      polygon(exterior,[...back].reverse(),wallMaterial,'gable-end');
+      for (let index=0;index<front.length;index++) {
+        const next=(index+1)%front.length;
+        polygon(exterior,[front[index],front[next],back[next],back[index]],wallMaterial,'gable-return');
       }
     }
   }
@@ -93,46 +130,44 @@ export function buildHouseModel(h) {
       }
     }
   }
-  const roofMaterial=new THREE.MeshStandardMaterial({color:h.style==='Traditional'?'#805b4e':'#485350',roughness:.8,side:THREE.DoubleSide});
-  const panels=roofPanels(h),cellMap=new Map(panels.map(panel=>[`${panel.ix}:${panel.iy}`,panel]));
-  const positions=[],indices=[];
-  const vertex=([x,z,y])=>{positions.push(x,y,z);return positions.length/3-1;};
-  const quad=points=>{
-    const first=positions.length/3,vertices=points.map(vertex);
-    indices.push(vertices[0],vertices[1],vertices[2],vertices[0],vertices[2],vertices[3]);
-    return first;
-  };
-  for(const panel of panels){
-    quad(panel.points);
-    const {ix,iy,x,endX,y,endY,room}=panel;
-    const edges=[
-      {neighbor:[ix,iy-1],a:[x,y],b:[endX,y]},
-      {neighbor:[ix+1,iy],a:[endX,y],b:[endX,endY]},
-      {neighbor:[ix,iy+1],a:[endX,endY],b:[x,endY]},
-      {neighbor:[ix-1,iy],a:[x,endY],b:[x,y]},
-    ];
-    for(const edge of edges){
-      const neighbor=cellMap.get(`${edge.neighbor[0]}:${edge.neighbor[1]}`);
-      const ownA=roofHeight(h,room,edge.a[0]),ownB=roofHeight(h,room,edge.b[0]);
-      if(!neighbor){
-        quad([[...edge.a,ownA],[...edge.b,ownB],[...edge.b,ownB-.16],[...edge.a,ownA-.16]]);
-        continue;
+  const roofForm=roofSections(h)[0]?.form;
+  const roofMaterial=new THREE.MeshStandardMaterial({
+    color:roofForm==='Multi-hip'?'#a95e42':'#58666b',
+    roughness:roofForm==='Multi-hip'?.88:.38,
+    metalness:roofForm==='Multi-hip'?.02:.72,
+    side:THREE.DoubleSide,
+  });
+  const roofDetailMaterial=new THREE.LineBasicMaterial({color:roofForm==='Multi-hip'?'#734433':'#34454c'});
+  const linePoints=[];
+  const lerpPoint=(a,b,t)=>a.map((value,index)=>value+(b[index]-value)*t);
+  for(const panel of roofPanels(h)){
+    const points=panel.points.map(([x,z,y])=>[x,y,z]);
+    const mesh=polygon(roof,points,roofMaterial,`roof:${panel.id}:${panel.face}`);
+    if(mesh)mesh.userData={sectionId:panel.id,face:panel.face,roomIds:panel.roomIds,roofForm:panel.form};
+    const p0=panel.points[0],p1=panel.points[1],p2=panel.points[2],p3=panel.points[3]||p2;
+    if(panel.form==='Intersecting gables'){
+      const distance=panel.ridgeAxis==='x'?panel.width:panel.depth;
+      const count=Math.max(2,Math.floor(distance/.85));
+      for(let index=0;index<=count;index++){
+        const t=index/count;
+        const a=lerpPoint(p0,p1,t),b=lerpPoint(p3,p2,t);
+        linePoints.push([a[0],a[2]+.012,a[1]],[b[0],b[2]+.012,b[1]]);
       }
-      const otherA=roofHeight(h,neighbor.room,edge.a[0]),otherB=roofHeight(h,neighbor.room,edge.b[0]);
-      if((Math.abs(ownA-otherA)>.001||Math.abs(ownB-otherB)>.001)&&ownA+ownB>otherA+otherB){
-        const highA=Math.max(ownA,otherA),highB=Math.max(ownB,otherB);
-        const lowA=Math.min(ownA,otherA),lowB=Math.min(ownB,otherB);
-        quad([[...edge.a,highA],[...edge.b,highB],[...edge.b,lowB],[...edge.a,lowA]]);
+    }else{
+      const courses=Math.max(2,Math.floor(Math.max(panel.width,panel.depth)/.38));
+      for(let index=1;index<courses;index++){
+        const t=index/courses;
+        const a=lerpPoint(p0,p3,t),b=lerpPoint(p1,p2,t);
+        linePoints.push([a[0],a[2]+.012,a[1]],[b[0],b[2]+.012,b[1]]);
       }
     }
   }
-  const geometry=new THREE.BufferGeometry();
-  geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
-  geometry.setIndex(indices);geometry.computeVertexNormals();
-  const mesh=new THREE.Mesh(geometry,roofMaterial);
-  mesh.castShadow=true;mesh.receiveShadow=true;mesh.name='roof-surface';
-  mesh.userData.roomIds=[...new Set(panels.map(panel=>panel.roomId))];
-  roof.add(mesh);
+  if(linePoints.length){
+    const geometry=new THREE.BufferGeometry().setFromPoints(linePoints.map(([x,y,z])=>new THREE.Vector3(x,y,z)));
+    const details=new THREE.LineSegments(geometry,roofDetailMaterial);
+    details.name=roofForm==='Multi-hip'?'roof-tile-courses':'roof-standing-seams';
+    roof.add(details);
+  }
   return { root, exterior, interior, roof, furniture };
 }
 

@@ -120,7 +120,7 @@ export function HouseConceptPage({ brief }) {
       <aside className="hc-summary" aria-label="Design summary and estimate">
         <span className="hc-eyebrow">YOUR HOME, AT A GLANCE</span>
         <h3>{a.bedrooms}-bedroom {a.style.toLowerCase()} home</h3>
-        <p className="hc-summary-copy">{house.layoutDescription} Roof: {house.style==='Traditional'?'pitched gable':house.style==='Minimalist'?'stepped flat roof':house.roofDesign.replaceAll('-',' ')}.</p>
+        <p className="hc-summary-copy">{house.layoutDescription} Roof: {house.roofDesign.toLowerCase()}.</p>
         <dl className="hc-quick-specs">
           {[['bed', a.bedrooms, 'Bedrooms'], ['bath', a.bathrooms, 'Bathrooms'], ['ruler', `${house.footprintArea.toFixed(1)} m²`, 'Gross floor area'], ['layers', '1', 'Storey']].map(([icon, value, label]) =>
             <div key={label}><Icon name={icon} /><dt>{label}</dt><dd>{value}</dd></div>)}
@@ -194,7 +194,11 @@ export function HouseConceptPage({ brief }) {
           <span><Icon name="check" size={14} />{house.circulationArea.toFixed(1)} m² circulation</span>
           {house.rooms.some((room) => room.type === 'office') && <span><Icon name="check" size={14} />Dedicated office</span>}
           {house.features.map((feature)=><span key={feature}><Icon name="check" size={14} />{feature}</span>)}
+<<<<<<< HEAD
           <span><Icon name="check" size={14} />{house.roofDesign.replaceAll('-', ' ')}</span></div>
+=======
+          <span><Icon name="check" size={14} />{house.roofDesign}</span></div>
+>>>>>>> 15555fd (roof)
         <details className="hc-accordion"><summary>Room dimensions <span>{house.rooms.length} spaces</span></summary>
           <div className="hc-table-wrap"><table><caption className="visually-hidden">Generated room dimensions and areas</caption><thead><tr><th scope="col">Space</th><th scope="col">Dimensions</th><th scope="col">Area</th></tr></thead>
             <tbody>{house.rooms.map((room) => <tr key={room.id}><th scope="row">{room.name}</th><td>{room.width.toFixed(1)} × {room.depth.toFixed(1)} m</td><td>{room.area.toFixed(1)} m²</td></tr>)}</tbody></table></div>

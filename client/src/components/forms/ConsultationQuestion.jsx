@@ -4,7 +4,12 @@ import { questionImpact } from '../../utils/consultation';
 
 const CHOICE_HINTS = {
   spaceLevel: { Compact: 'Smaller rooms and an efficient footprint.', Balanced: 'Comfortable everyday room sizes.', Generous: 'Larger bedrooms and shared living spaces.' },
-  style: { Modern: 'Clean lines and a flat roof profile.', Traditional: 'A pitched roof and a warmer exterior palette.', Minimalist: 'A restrained palette and a flat roof profile.' },
+  style: { Modern: 'Clean lines and a contemporary exterior palette.', Traditional: 'A warmer exterior palette.', Minimalist: 'A restrained exterior palette.' },
+  roofForm: {
+    Automatic: 'Choose a roof system based on your architectural style.',
+    'Intersecting gables': 'Connected pitched roof sections with gable ends; suited to standing-seam metal.',
+    'Multi-hip': 'Pitched planes meet along hips and ridges; suited to tiled roofs.',
+  },
   finish: { Basic: 'The lowest illustrative area rate.', Standard: 'The middle illustrative area rate.', Premium: 'The highest illustrative area rate.' },
   kitchen: { 'Open plan': 'Cooking, dining and living share one space.', Separate: 'A kitchen room linked to the living area.' },
 };

@@ -91,5 +91,5 @@ export function buildSourceLayout(answers,template) {
     if(r.id)r.area=+(r.width*r.depth).toFixed(2);
   }
   const width=round(Math.max(...rooms.map(r=>r.x+r.width))),length=round(Math.max(...rooms.map(r=>r.y+r.depth)));
-  return {rooms,width,length,wall:.18,entryId:entry.id,terraces,roofDesign:template.recipe==='linear'?'mono-pitch':template.recipe==='split'?'butterfly':'stepped-pavilions'};
+  return {rooms,width,length,wall:.18,entryId:entry.id,terraces};
 }

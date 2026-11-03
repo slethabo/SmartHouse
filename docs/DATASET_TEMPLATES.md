@@ -113,13 +113,20 @@ Doors and windows use actual exposed segments, including side garage entrances.
 Floor area sums occupied rooms, while plot fit includes the full extent of enclosed rooms and terraces.
 Terraces are shown separately and excluded from the construction area estimate.
 
-`architecture.js` supplies shared roof geometry. Modern source families use
-mono-pitch, butterfly and stepped pavilion roofs respectively. Minimalist style
-uses stepped flat roofs; Traditional uses a pitched profile. These roof designs
-are project interpretations, since source scans provide no roof elevations.
-The SVG plan, axonometric view, elevations and Three.js model share the same
-footprint/openings. Foundations and roof panels cover rooms rather than filling
-the enclosing rectangle. Raised pavilion transitions include clerestory glazing.
+`architecture.js` builds two selectable pitched roof systems from the occupied
+footprint. It partitions the union of room rectangles into non-overlapping
+rectangular roof sections, with a 0.3 m concept overhang. Intersecting gables use
+two sloped planes and gable infill at each section end, with standing-seam
+detailing. When the room program separates living/kitchen/dining spaces from
+bedrooms along one axis, it deterministically gives the private wing a perpendicular
+ridge to produce an actual cross-gable intersection.
+Multi-hip roofs use four planes per section, joining at ridges/hip lines, with
+tile-course detailing. The default is multi-hip for Traditional style and
+intersecting gables for Modern or Minimalist; the consultation can override it.
+The same generated faces and eave heights drive the Three.js roof, SVG exterior,
+and facade checks. Separate rectangles at concave footprint steps create
+additional conceptual roof sections; the result is not a structural roof
+framing, flashing, drainage, or waterproofing plan.
 
 `furniture.js` supplies the same indicative furniture footprints to the SVG plan
 and Three.js model. The plan gallery is taller and includes an Enlarge floor plan
@@ -132,10 +139,10 @@ architectural concepts rather than certified construction drawings.
 
 ## Integration and versioning
 
-Generated objects use `schemaVersion: 4` and
-`generatorVersion: 'source-plans-v3'`. Keep the entire generated object,
+Generated objects use `schemaVersion: 5` and
+`generatorVersion: 'source-plans-v4-roof-sections'`. Keep the entire generated object,
 including `walls`, opening edges, `privateTo`, source metadata, selected features,
-space profile and alternatives, when saving a concept snapshot. The Supabase
+space profile, roof form, and alternatives, when saving a concept snapshot. The Supabase
 schema's geometry JSONB supports these additions; no SQL reset is required.
 The integration owner must validate the new optional fields server-side and
 preserve them when normalising a confirmed brief. Existing briefs with missing
@@ -150,8 +157,10 @@ The prototype runner checks source hashes/attribution, explicit template choice,
 room counts, non-overlap, room bounds, reachability, physical shared-edge door
 placement, suite access, deterministic alternatives, finish/space independence,
 additional-room preservation under conflicts, and finite matching 3D meshes.
-It also checks preservation of source cores, exposed footprint boundaries, roof coverage, the six-bedroom layout regression, and
-furniture bounds/non-overlap across both kitchen arrangements.
+It also checks preservation of source cores, exposed footprint boundaries,
+non-overlapping roof-section coverage, explicit gable/hip geometry and finishes,
+the six-bedroom layout regression, and furniture bounds/non-overlap across both
+kitchen arrangements.
 Its geometry matrix covers 432 combinations across all three templates, 1–6
 bedrooms, 1–4 bathrooms, three space profiles and two feature sets.
 Static React/SVG renders were also checked for all three families, and a separate

@@ -52,11 +52,15 @@ Project pages now separate Your house from Edit brief. Confirmed projects open i
 The active generator now uses `sourceLayouts.js` cores instead of rectangular
 column packing. The three sources retain distinct room relationships and footprint
 setbacks. Extra rooms form marked additions. Shared `architecture.js` geometry
-provides mono-pitch, butterfly or stepped pavilion roofs for Modern designs.
-SVG elevations, perspective and Three.js follow actual exposed walls, recessed
-entrances, terrace positions and roof panels. Area excludes outdoor gaps/terraces.
-Generated snapshots are schema 4 / `source-plans-v3`; persist terraces, roofDesign,
-room zones/addition flags and wall ownership alongside existing geometry.
-
-Browser interaction review is unavailable because the computer-use runtime cannot
-initialise. Static SVG rendering and automated geometry/model checks are available.
+provides a deterministic roof-section algorithm for intersecting gables or
+multi-hip roofs. It partitions the occupied footprint into rectangular sections,
+creates pitched planes, eaves, gable infill, metal standing seams or tile courses,
+and feeds the shared geometry to the Three.js model and SVG exterior. Where the
+room program places social and private spaces in separate wings, the private roof
+uses a perpendicular ridge for a cross-gable form. Automatic selection maps
+Traditional to multi-hip and Modern/Minimalist to gables; users can override this
+in the consultation. A browser smoke test rendered both roof choices in the
+interactive 3D view. This concept geometry does not resolve structural framing,
+flashing, drainage or waterproofing. Generated snapshots are schema 5 /
+`source-plans-v4-roof-sections`; persist roofForm/roofDesign, terraces, room
+zones/addition flags and wall ownership alongside existing geometry.

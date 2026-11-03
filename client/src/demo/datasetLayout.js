@@ -1,12 +1,15 @@
 import templates from './floor-plan-templates.json';
 import { connectRooms } from './templateGeometry';
 import { buildSourceLayout } from './sourceLayouts';
+import { resolveRoofForm } from './architecture';
 
 export const FLOOR_PLAN_TEMPLATES = templates;
 function buildCandidate(answers,template) {
   const features=Array.isArray(answers.homeFeatures)?answers.homeFeatures:[];
   const has=feature=>features.includes(feature),ensuite=has('Main en-suite'),sharedBaths=Number(answers.bathrooms)-Number(ensuite);
   const layout=buildSourceLayout(answers,template);
+  const roofForm=answers.roofForm||'Automatic';
+  const roofDesign=resolveRoofForm({style:answers.style,roofForm});
   const {rooms,width,length,wall}=layout;
   const geometry=connectRooms(layout,layout.entryId),swap=['East','West'].includes(answers.access);
   const plotFrontage=Number(swap?answers.length:answers.width),plotDepth=Number(swap?answers.width:answers.length);
@@ -20,8 +23,8 @@ function buildCandidate(answers,template) {
   if (ensuite&&sharedBaths===0) notes.push('Your only bathroom is the main en-suite. Increase the bathroom count if you need a shared bathroom.');
   const unlit=rooms.filter((r)=>['bedroom','bathroom','office'].includes(r.type)&&!geometry.windows.some((w)=>w.roomId===r.id));
   if (unlit.length) notes.push(`${unlit.map((r)=>r.name).join(', ')} need a daylight/ventilation review.`);
-  return {schemaVersion:4,generatorVersion:'source-plans-v3',packing:'source-core-with-additions',terraces:layout.terraces,
-    roofDesign:answers.style==='Traditional'?'gable':answers.style==='Minimalist'?'stepped-flat':layout.roofDesign,siteWidth,siteDepth,
+  return {schemaVersion:5,generatorVersion:'source-plans-v4-roof-sections',packing:'source-core-with-additions',terraces:layout.terraces,
+    roofForm,roofDesign,siteWidth,siteDepth,
     layoutDescription:template.description,
     width,length,wall,rooms,...geometry,footprintArea,
     circulationArea:+rooms.filter((r)=>r.type==='hall').reduce((n,r)=>n+r.area,0).toFixed(2),plotFrontage,plotDepth,rate,total,conflicts,notes,fitsPlot,withinBudget,style:answers.style,

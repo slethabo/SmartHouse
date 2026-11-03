@@ -21,15 +21,19 @@ const consultationModule = new Module(__filename);
 consultationModule._compile(consultationBundle.outputFiles[0].text, __filename);
 const { validateConsultation, consultationProgress, siteScopeErrors, formatConsultationAnswer } = consultationModule.exports;
 const questionnaire = require('../src/demo/consultation.json');
+<<<<<<< HEAD
 const estimatorBundle = buildSync({ entryPoints: [path.join(__dirname, '../src/demo/estimator.js')], bundle: true, platform: 'node', format: 'cjs', write: false });
 const estimatorModule = new Module(__filename);
 estimatorModule._compile(estimatorBundle.outputFiles[0].text, __filename);
 const { estimateHouseFromCatalogue } = estimatorModule.exports;
 const modelBundle = buildSync({ stdin: { contents: 'export * from "./houseModel.js"; export * as THREE from "three";', resolveDir: path.join(__dirname, '../src/demo'), sourcefile: 'model-test-entry.js' }, bundle: true, platform: 'node', format: 'cjs', write: false });
+=======
+const modelBundle = buildSync({ stdin: { contents: 'export * from "./houseModel.js"; export * from "./architecture.js"; export * as THREE from "three";', resolveDir: path.join(__dirname, '../src/demo'), sourcefile: 'model-test-entry.js' }, bundle: true, platform: 'node', format: 'cjs', write: false });
+>>>>>>> 15555fd (roof)
 const modelModule = new Module(__filename);
 modelModule.paths = module.paths;
 modelModule._compile(modelBundle.outputFiles[0].text, __filename);
-const { buildHouseModel, disposeHouseModel, THREE } = modelModule.exports;
+const { buildHouseModel, disposeHouseModel, roofPanels, roofSections, THREE } = modelModule.exports;
 const answers = { location: 'Demo', width: 20, length: 30, shape: 'Rectangular', terrain: 'Flat', access: 'South', budget: 1500000, finish: 'Basic', budgetIncludes: ['Labour', 'Materials'], occupants: 4, bedrooms: 3, bathrooms: 2, workFromHome: 'No', guests: 'Rarely', kitchen: 'Open plan', style: 'Modern', privacy: 'No preference', accessibility: 'None stated' };
 beforeEach(() => {
   const storage = new Map();
@@ -234,19 +238,57 @@ test('3D model matches room floors and contains actual window openings in its wa
   });
   disposeHouseModel(model.root);
 });
-test('traditional roof has a ridge and all roof designs support cutaway', () => {
+test('roof system selection creates gable and hip sections and supports cutaway', () => {
   for (const style of ['Traditional', 'Modern']) {
     const house = createHouseConcept({ ...answers, style });
     const model = buildHouseModel(house);
     model.root.updateMatrixWorld(true);
     const bounds = new THREE.Box3().setFromObject(model.roof);
-    if(style==='Traditional')assert.ok(Math.abs(bounds.max.y-4)<.001);
-    else assert.ok(bounds.max.y>=3&&bounds.max.y<4);
+    assert.equal(house.roofDesign,style==='Traditional'?'Multi-hip':'Intersecting gables');
+    assert.ok(bounds.max.y>3);
+    assert.ok(model.roof.children.some((item)=>item.name===
+      (style==='Traditional'?'roof-tile-courses':'roof-standing-seams')));
     model.roof.visible = false;
     assert.ok(model.furniture.children.length > 0);
     assert.ok(model.interior.children.length > 0);
     disposeHouseModel(model.root);
   }
+});
+
+test('roof algorithm partitions the footprint without gaps and follows explicit gable or hip requirements', () => {
+  for (const roofForm of ['Intersecting gables','Multi-hip']) {
+    const house=createHouseConcept({...answers,roofForm});
+    const sections=roofSections(house),panels=roofPanels(house),model=buildHouseModel(house);
+    const sectionArea=sections.reduce((sum,section)=>
+      sum+(section.buildingBounds.x1-section.buildingBounds.x0)*(section.buildingBounds.y1-section.buildingBounds.y0),0);
+    assert.equal(house.roofDesign,roofForm);
+    assert.ok(Math.abs(sectionArea-house.footprintArea)<.001,'Roof sections must cover the building footprint exactly once');
+    assert.ok(sections.every(section=>section.roomIds.length>0));
+    assert.ok(panels.every(panel=>panel.form===roofForm&&panel.points.length>=3));
+    assert.ok(model.roof.children.some(mesh=>mesh.name.startsWith('roof:')));
+    const modelRooms=new Set(model.roof.children.filter(mesh=>mesh.name.startsWith('roof:')).flatMap(mesh=>mesh.userData.roomIds));
+    assert.equal(modelRooms.size,house.rooms.length,'Roof section metadata must account for every room');
+    if(roofForm==='Intersecting gables'){
+      const gableEnds=model.exterior.children.filter(mesh=>mesh.name==='gable-end');
+      assert.equal(gableEnds.length,sections.length*4,'Each gable section must have two end faces built as front and back surfaces');
+    }
+    model.root.traverse((object)=>{
+      const positions=object.geometry?.getAttribute('position');
+      if(positions)assert.ok(Array.from(positions.array).every(Number.isFinite));
+    });
+    disposeHouseModel(model.root);
+  }
+});
+
+test('wide family roof separates social and private wings with intersecting ridge directions', () => {
+  const house=createHouseConcept({...answers,layoutPreference:'Wide family residence',roofForm:'Intersecting gables'});
+  const sections=roofSections(house);
+  assert.ok(sections.some(section=>section.zone==='social'&&section.ridgeAxis==='x'));
+  assert.ok(sections.some(section=>section.zone==='private'&&section.ridgeAxis==='y'));
+  assert.equal(new Set(sections.map(section=>section.ridgeAxis)).size,2);
+  const sectionArea=sections.reduce((sum,section)=>
+    sum+(section.buildingBounds.x1-section.buildingBounds.x0)*(section.buildingBounds.y1-section.buildingBounds.y0),0);
+  assert.ok(Math.abs(sectionArea-house.footprintArea)<.001);
 });
 
 test('all reviewed source plans are packaged unchanged with attribution', () => {
@@ -316,11 +358,10 @@ test('six-bedroom open-plan home keeps living and utility spaces in proportion',
 });
 
 test('source cores remain distinct and bedroom additions preserve the original room positions', () => {
-  const cases=[['Linear living',1,'mono-pitch'],['Split living',2,'butterfly'],['Wide family residence',3,'stepped-pavilions']];
-  for(const [layoutPreference,bedrooms,roofDesign] of cases){
+  const cases=[['Linear living',1],['Split living',2],['Wide family residence',3]];
+  for(const [layoutPreference,bedrooms] of cases){
     const base=createHouseConcept({...answers,layoutPreference,bedrooms,bathrooms:1,kitchen:'Separate'});
     const expanded=createHouseConcept({...answers,layoutPreference,bedrooms:6,bathrooms:1,kitchen:'Separate'});
-    assert.equal(base.roofDesign,roofDesign);
     const shiftX=expanded.rooms[0].x-base.rooms[0].x,shiftY=expanded.rooms[0].y-base.rooms[0].y;
     for(const room of base.rooms){
       const same=expanded.rooms.find(r=>r.id===room.id);
@@ -330,8 +371,7 @@ test('source cores remain distinct and bedroom additions preserve the original r
     if(layoutPreference!=='Linear living')assert.ok(base.footprintArea<base.width*base.length-1,'Source setbacks must remain outside the enclosed area');
     const model=buildHouseModel(base);
     assert.equal(model.root.children.filter(o=>o.name.startsWith('foundation:')).length,base.rooms.length);
-    assert.equal(model.roof.children.length,1,'One joined roof surface should cover the house instead of a box per room');
-    const roofRooms=new Set(model.roof.children[0].userData.roomIds);
+    const roofRooms=new Set(model.roof.children.filter(mesh=>mesh.name.startsWith('roof:')).flatMap(mesh=>mesh.userData.roomIds));
     assert.equal(roofRooms.size,base.rooms.length,'Roofs must cover actual rooms rather than the enclosing rectangle');
     for(const wall of base.walls.filter(w=>w.exterior)){
       const x=wall.x+(wall.axis==='x'?wall.length/2:0),y=wall.y+(wall.axis==='y'?wall.length/2:0);
