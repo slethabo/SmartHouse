@@ -1,5 +1,6 @@
 const { test, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
 const Module = require('node:module');
 const { buildSync } = require('esbuild');
@@ -20,6 +21,10 @@ const consultationModule = new Module(__filename);
 consultationModule._compile(consultationBundle.outputFiles[0].text, __filename);
 const { validateConsultation, consultationProgress, siteScopeErrors, formatConsultationAnswer } = consultationModule.exports;
 const questionnaire = require('../src/demo/consultation.json');
+const estimatorBundle = buildSync({ entryPoints: [path.join(__dirname, '../src/demo/estimator.js')], bundle: true, platform: 'node', format: 'cjs', write: false });
+const estimatorModule = new Module(__filename);
+estimatorModule._compile(estimatorBundle.outputFiles[0].text, __filename);
+const { estimateHouseFromCatalogue } = estimatorModule.exports;
 const modelBundle = buildSync({ stdin: { contents: 'export * from "./houseModel.js"; export * as THREE from "three";', resolveDir: path.join(__dirname, '../src/demo'), sourcefile: 'model-test-entry.js' }, bundle: true, platform: 'node', format: 'cjs', write: false });
 const modelModule = new Module(__filename);
 modelModule.paths = module.paths;
@@ -147,6 +152,53 @@ test('office, separate kitchen and plot/budget conflicts change the concept hone
   const east = createHouseConcept({ ...answers, access: 'East', width: 25, length: 12 });
   assert.equal(east.plotFrontage, 12);
   assert.equal(east.plotDepth, 25);
+});
+
+test('catalogue and researched material prices are itemized and sum to the estimate', () => {
+  const house = createHouseConcept(answers);
+  const products = JSON.parse(fs.readFileSync(path.join(__dirname, '../../smart_house_products.json'), 'utf8'));
+  const benchmarks = JSON.parse(fs.readFileSync(path.join(__dirname, '../src/demo/material_price_benchmarks.json'), 'utf8'));
+  const estimate = estimateHouseFromCatalogue(house, house.rate, products, benchmarks);
+  assert.ok(estimate.lines.find((line) => line.key === 'bricks').total > 0);
+  assert.ok(estimate.lines.find((line) => line.key === 'concrete').total > 0);
+  assert.ok(estimate.lines.find((line) => line.key === 'gutters').total > 0);
+  assert.equal(estimate.lines.find((line) => line.key === 'bricks').unitPrice, 2.8);
+  assert.equal(estimate.lines.find((line) => line.key === 'concrete').unitPrice, 659.9);
+  assert.equal(estimate.lines.find((line) => line.key === 'windows').unitPrice, 874.65);
+  assert.equal(estimate.lines.find((line) => line.key === 'roofSheets').unitPrice, 514.62);
+  assert.equal(estimate.lines.find((line) => line.key === 'roofTrusses').unitPrice, 475);
+  assert.equal(estimate.lines.find((line) => line.key === 'ceilingBoards').unitPrice, 241.37);
+  assert.equal(estimate.lines.find((line) => line.key === 'roofInsulation').unitPrice, 717);
+  assert.equal(estimate.lines.find((line) => line.key === 'ceilingBoards').quantity, Math.ceil(house.footprintArea / 3.6));
+  assert.equal(estimate.lines.find((line) => line.key === 'roofInsulation').quantity, Math.ceil(house.footprintArea / 7.2));
+  const catalogueLines = estimate.lines.filter((line) => line.sourceType === 'catalogue');
+  const researchLines = estimate.lines.filter((line) => line.sourceType === 'research');
+  const mean = (values) => values.reduce((sum, value) => sum + value, 0) / values.length;
+  assert.equal(benchmarks.rates.windows.unitPrice, Math.round((mean(benchmarks.rates.windows.sources.map((source) => source.price)) / 1.44) * 100) / 100);
+  assert.equal(benchmarks.rates.roofSheets.unitPrice, Math.round(mean(benchmarks.rates.roofSheets.sources.map((source) => source.price)) * 100) / 100);
+  assert.equal(benchmarks.rates.ceilingBoards.unitPrice, Math.round(mean(benchmarks.rates.ceilingBoards.sources.map((source) => source.price)) * 100) / 100);
+  assert.equal(benchmarks.rates.roofInsulation.unitPrice, mean(benchmarks.rates.roofInsulation.sources.map((source) => source.price)));
+  assert.equal(benchmarks.rates.roofTrusses.unitPrice, mean(benchmarks.rates.roofTrusses.sources.map((source) => (source.low + source.high) / 2)));
+  assert.equal(estimate.catalogueSubtotal, catalogueLines.reduce((sum, line) => sum + (line.total || 0), 0));
+  assert.equal(estimate.researchedMaterialsSubtotal, researchLines.reduce((sum, line) => sum + line.total, 0));
+  assert.equal(estimate.pricedMaterialsSubtotal, estimate.catalogueSubtotal + estimate.researchedMaterialsSubtotal);
+  assert.equal(estimate.pricedMaterialsSubtotal + estimate.allowance, estimate.total);
+  assert.equal(estimate.total, Math.max(house.total, estimate.pricedMaterialsSubtotal));
+  assert.ok(researchLines.every((line) => line.sources.length >= 2 && line.sources.every((source) => source.url.startsWith('https://'))));
+  assert.match(estimate.pricingNote, /2026-11-03/);
+  const unavailableProduct = { id: 133, sku: 'RANGED', name: 'Variable brick price', is_in_stock: true, prices: { price: '280', currency_code: 'ZAR', currency_minor_unit: 2, price_range: { min_amount: '280', max_amount: '500' } } };
+  const unavailable = estimateHouseFromCatalogue(house, house.rate, [unavailableProduct], benchmarks);
+  assert.equal(unavailable.lines.find((line) => line.key === 'bricks').priced, false);
+  assert.match(unavailable.lines.find((line) => line.key === 'bricks').note, /variable or unavailable/);
+});
+
+test('flat roofs omit sloped-roof-only benchmark materials and missing price data fails explicitly', () => {
+  const benchmarks = JSON.parse(fs.readFileSync(path.join(__dirname, '../src/demo/material_price_benchmarks.json'), 'utf8'));
+  const products = JSON.parse(fs.readFileSync(path.join(__dirname, '../../smart_house_products.json'), 'utf8'));
+  const flatHouse = createHouseConcept({ ...answers, style: 'Minimalist' });
+  const estimate = estimateHouseFromCatalogue(flatHouse, flatHouse.rate, products, benchmarks);
+  assert.equal(estimate.lines.some((line) => ['roofSheets', 'roofTrusses'].includes(line.key)), false);
+  assert.throws(() => estimateHouseFromCatalogue(flatHouse, flatHouse.rate, products), /benchmarks could not be read/);
 });
 
 test('3D model matches room floors and contains actual window openings in its walls', () => {

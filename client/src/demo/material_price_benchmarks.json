@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "currency": "ZAR",
+  "researchedOn": "2026-11-03",
+  "description": "Indicative South African retail benchmarks for common materials not available as fixed-price, in-stock items in smart_house_products.json. Retail prices vary by store, location, stock and date; these are planning estimates, not supplier quotes.",
+  "rates": {
+    "windows": {
+      "label": "Aluminium windows (standard-size equivalent)",
+      "unit": "m²",
+      "unitPrice": 874.65,
+      "referenceAreaM2": 1.44,
+      "averageReferencePrice": 1259.5,
+      "averageMethod": "Arithmetic mean of two in-stock 1200 x 1200 mm aluminium window listings (R1,219.99 and R1,299.00), normalized by their 1.44 m² reference area.",
+      "sources": [
+        {
+          "name": "Build Africa Hardware",
+          "price": 1219.99,
+          "priceLabel": "R1,219.99; 1200 x 1200 mm aluminium window",
+          "url": "https://buildafricasa.co.za/shop/doors-windows-frames/windows/aluminium-windows/1200-x-1200-clear-aluminium-window/"
+        },
+        {
+          "name": "K. Carrim",
+          "price": 1299,
+          "priceLabel": "R1,299.00; 1200 x 1200 mm bronze aluminium window",
+          "url": "https://carrimonline.co.za/product/aluminium-window-1200x1200-bronze/"
+        }
+      ]
+    },
+    "roofSheets": {
+      "label": "0.47 mm IBR metal roof sheeting",
+      "unit": "4.8 m sheet",
+      "unitPrice": 514.62,
+      "coverageM2": 3.2928,
+      "averageMethod": "Arithmetic mean of three South African listings for 0.47 mm, 4.8 m IBR sheets (R594.95, R469.90 and R479.00). Coverage uses a 686 mm effective cover width.",
+      "sources": [
+        {
+          "name": "Cashbuild",
+          "price": 594.95,
+          "priceLabel": "R594.95; 0.47 mm x 4.8 m Aluzinc IBR",
+          "url": "https://www.cashbuild.co.za/ibr/322936-ibr-aluzinc-047mm-x-48m"
+        },
+        {
+          "name": "PriceCheck (Buildit DTM listing)",
+          "price": 469.9,
+          "priceLabel": "R469.90; 0.47 mm x 4.8 m Z150 IBR sheet",
+          "url": "https://www.pricecheck.co.za/offers/259011419/Ibr+Roof+Sheeting+0.47MM+X+4.8M+Z150"
+        },
+        {
+          "name": "Leroy Merlin South Africa",
+          "price": 479,
+          "priceLabel": "R479.00; 0.47 mm x 4.8 m galvanized IBR roof sheet",
+          "url": "https://leroymerlin.co.za/metal-roof-sheet-ibr-galvanized-steel-z150-4-8m-0-47mm-81423999"
+        }
+      ]
+    },
+    "roofTrusses": {
+      "label": "Timber roof truss structure",
+      "unit": "m² of sloped roof",
+      "unitPrice": 475,
+      "averageMethod": "Planning midpoint average of two published South African per-m² ranges: R250–R750 and R250–R650. Published ranges vary with spans, design and inclusions; this is a low-confidence structural benchmark, not a quote.",
+      "sources": [
+        {
+          "name": "RoofTrusses.co.za",
+          "low": 250,
+          "high": 750,
+          "priceLabel": "Published range: R250–R750 per m²",
+          "url": "https://rooftrusses.co.za/blog/roof-trusses-prices-per-m2-in-south-africa"
+        },
+        {
+          "name": "Truss Master",
+          "low": 250,
+          "high": 650,
+          "priceLabel": "Published range: R250–R650 per m² for the timber structure",
+          "url": "https://trussmaster.co.za/roof-truss-prices-south-africa/"
+        }
+      ]
+    },
+    "ceilingBoards": {
+      "label": "6.4 mm gypsum ceiling board (1200 x 3000 mm)",
+      "unit": "sheet",
+      "unitPrice": 241.37,
+      "coverageM2": 3.6,
+      "averageMethod": "Arithmetic mean of three 6.4 mm, 1200 x 3000 mm gypsum board listings: R245.15, R209.00 and R269.95.",
+      "sources": [
+        {
+          "name": "BUCO",
+          "price": 245.15,
+          "priceLabel": "R245.15 per 1200 x 3000 mm sheet",
+          "url": "https://www.buco.co.za/departments/roofing-ceiling/ceiling/gypsum-plasterboard-6-4x1200x3000mm-1020827"
+        },
+        {
+          "name": "Builders South Africa",
+          "price": 209,
+          "priceLabel": "R209.00 per Gyproc RhinoBoard 6.4 x 1200 x 3000 mm sheet",
+          "url": "https://www.builders.co.za/Building-Materials/Ceiling/Ceiling-Boards/Gyproc-RhinoBoard-6-4-mm-Plasterboard--ndash--1200-x-3000-mm-Ceiling/p/000000000000007309"
+        },
+        {
+          "name": "Cashbuild",
+          "price": 269.95,
+          "priceLabel": "R269.95 per 6.4 mm, 1200 x 3000 mm sheet",
+          "url": "https://www.cashbuild.co.za/gypsum/221-rhinoboard-64mm-1200-x-3000mm"
+        }
+      ]
+    },
+    "roofInsulation": {
+      "label": "100 mm polyester roof insulation",
+      "unit": "7.2 m² roll",
+      "unitPrice": 717,
+      "coverageM2": 7.2,
+      "averageMethod": "Arithmetic mean of two 100 mm polyester insulation rolls with 7.2 m² coverage, listed at R749.00 and R685.00.",
+      "sources": [
+        {
+          "name": "Builders South Africa",
+          "price": 749,
+          "priceLabel": "R749.00 per 7.2 m² roll",
+          "url": "https://www.builders.co.za/Building-Materials/Roofing/Roof-Insulation/Isotherm-100-mm-Thermal-Insulation-Roll--ndash--R-Value-2-04--Recycled-PET-Polyester--7-2-m2-Coverage/p/000000000000298651"
+        },
+        {
+          "name": "Leroy Merlin South Africa",
+          "price": 685,
+          "priceLabel": "R685.00 per 7.2 m² roll",
+          "url": "https://leroymerlin.co.za/polyester-ceiling-insulation-100mm-7-2m2-isotherm-81423874"
+        }
+      ]
+    }
+  }
+}
