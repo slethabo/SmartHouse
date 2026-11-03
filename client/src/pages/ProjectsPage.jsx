@@ -7,6 +7,10 @@ import { Icon } from '../components/ui/Icon';
 import { PrototypeConcept } from './PrototypeConcept';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useAuth } from '../context/AuthContext';
+import { ConsultationQuestion } from '../components/forms/ConsultationQuestion';
+import { ConsultationReview, ConsultationScopeNotice } from '../components/forms/ConsultationReview';
+import { consultationProgress, questionVisible, siteScopeErrors, validateConsultation } from '../utils/consultation';
+import '../styles/consultation.css';
 
 const DESCRIPTIONS = [
   'Start with the land. Its dimensions help shape what your home can become.',
@@ -14,12 +18,12 @@ const DESCRIPTIONS = [
   'A good home fits your routines. Let us get to know yours.',
   'Choose the details that make this home feel like you.',
 ];
-const visible = (q, a) => !q.when || a[q.when.key] === q.when.value;
+const visible = questionVisible;
 
 function normalizeAnswers(steps, answers) {
   const normalized = { ...answers };
   const budgetQuestion = steps.flatMap((step) => step.questions).find((question) => question.key === 'budgetIncludes');
-  if (typeof normalized.budgetIncludes === 'string' && budgetQuestion) {
+  if (typeof normalized.budgetIncludes === 'string' && Array.isArray(budgetQuestion?.options)) {
     const previousAnswer = normalized.budgetIncludes.toLowerCase();
     normalized.budgetIncludes = budgetQuestion.options.filter((option) => previousAnswer.includes(option.toLowerCase()));
   }
@@ -91,6 +95,8 @@ export function ConsultationPage() {
   const [brief, setBrief] = useState(null);
   const [retry, setRetry] = useState(0);
   const heading = useRef(null);
+  const formRef = useRef(null);
+  const shouldFocusError = useRef(false);
   const workspaceHeading = useRef(null);
   const mode = params.get('mode') === 'brief' || !brief ? 'brief' : 'design';
   useEffect(() => { window.scrollTo({ top: 0 }); workspaceHeading.current?.focus({ preventScroll: true }); }, [mode]);
@@ -101,7 +107,8 @@ export function ConsultationPage() {
       if (controller.signal.aborted) return;
       const draftAnswers = normalizeAnswers(c.data.steps, p.data.draft.answers);
       setConfig(c.data); setProject(p.data.project); setAnswers(draftAnswers); setRevision(p.data.draft.revision); setBrief(p.data.briefs[0] || null); setDirty(false);
-      const firstIncomplete = c.data.steps.findIndex((s) => s.questions.some((q) => visible(q, draftAnswers) && q.required && (draftAnswers[q.key] === undefined || draftAnswers[q.key] === '' || (Array.isArray(draftAnswers[q.key]) && draftAnswers[q.key].length === 0))));
+      const draftErrors = validateConsultation(c.data.steps, draftAnswers, { complete: true });
+      const firstIncomplete = c.data.steps.findIndex((section) => section.questions.some((q) => draftErrors[q.key]));
       const resume = firstIncomplete < 0 ? c.data.steps.length : firstIncomplete;
       setStep(resume); setFurthest(resume);
     }).catch((e) => { if (e.name !== 'AbortError') setError(e.message); });
@@ -109,12 +116,30 @@ export function ConsultationPage() {
   }, [id, retry]);
   useEffect(() => { heading.current?.focus(); }, [step]);
   useEffect(() => {
+    if (!shouldFocusError.current || !Object.keys(fields).length) return undefined;
+    shouldFocusError.current = false;
+    const frame = requestAnimationFrame(() => formRef.current?.querySelector('fieldset[aria-invalid="true"] input, input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"]')?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [fields]);
+  useEffect(() => {
     if (!dirty) return undefined;
     const warn = (event) => { event.preventDefault(); event.returnValue = ''; };
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
   }, [dirty]);
   async function save(confirm = false, advance = false) {
+    if (busy) return;
+    const checkedSteps = advance ? [config.steps[step]] : config.steps;
+    const errors = validateConsultation(checkedSteps, answers, { complete: confirm || advance });
+    if (confirm) Object.assign(errors, siteScopeErrors(answers));
+    if (Object.keys(errors).length) {
+      shouldFocusError.current = true;
+      setFields(errors); setError('Please check the highlighted answers. Your changes are still here.'); setMessage('');
+      const first = config.steps.findIndex((section) => section.questions.some((q) => errors[q.key]));
+      if (first >= 0) setStep(first);
+      return;
+    }
+    if (confirm && !acknowledged) { setError('Please review and acknowledge your brief before creating the concept.'); return; }
     setBusy(true); setError(''); setMessage(''); setFields({});
     try {
       const { data } = await api.put(`/projects/${id}/consultation`, { expectedRevision: revision, answers });
@@ -127,6 +152,7 @@ export function ConsultationPage() {
     } catch (e) {
       setError(e.message);
       const fieldErrors = Object.fromEntries(Object.entries(e.fields || {}).map(([key, value]) => [key.replace(/^answers\./, ''), value]));
+      shouldFocusError.current = true;
       setFields(fieldErrors);
       const key = Object.keys(fieldErrors)[0];
       const index = config.steps.findIndex((s) => s.questions.some((q) => q.key === key));
@@ -136,22 +162,36 @@ export function ConsultationPage() {
   }
   function change(q, value) {
     setAnswers((a) => { const next = { ...a }; if (value === '') delete next[q.key]; else next[q.key] = q.type === 'number' ? Number(value) : value; return next; });
-    setDirty(true); setAcknowledged(false); setMessage(''); setFields((f) => ({ ...f, [q.key]: undefined }));
+    setDirty(true); setAcknowledged(false); setMessage(''); setError(''); setFields((f) => ({ ...f, [q.key]: undefined }));
   }
   if (!config || !project) return <div className="studio studio-panel studio-empty"><Icon name={error ? 'alert' : 'refresh'} size={32} /><h1>{error ? 'Open your saved workspace.' : 'Opening your project...'}</h1><p role={error ? 'alert' : 'status'}>{error || 'Loading your saved consultation.'}</p>{error && <Button onClick={() => setRetry((n) => n + 1)}>Try again</Button>}<Link to="/">Back to projects</Link></div>;
   const review = step === config.steps.length;
   const titles = [...config.steps.map((s) => s.title), 'Review brief'];
+  const progress = consultationProgress(config.steps, answers);
   return <div className={`studio project-workspace ${mode === 'design' ? 'project-workspace--design' : ''}`}>
     <Link className="studio-back" to="/" onClick={(e) => { if (dirty && !window.confirm('Leave without saving your latest changes?')) e.preventDefault(); }}><Icon name="arrowLeft" size={16} /> All projects</Link>
     <div className="studio-page-heading"><div><span className="studio-eyebrow">{mode === 'design' ? 'YOUR HOUSE WORKSPACE' : 'ARCHITECTURAL CONSULTATION'}</span><h1 ref={workspaceHeading} tabIndex={-1}>{project.title}</h1></div><span className={`studio-save-state ${dirty ? 'is-unsaved' : ''}`}><span />{mode === 'design' ? `Concept version ${brief?.version}` : dirty ? 'Unsaved changes' : 'Progress saved'}</span></div>
     <div className="project-workspace-tabs" aria-label="Project workspace"><button type="button" aria-pressed={mode === 'design'} disabled={!brief} onClick={() => setParams({ mode: 'design' })}><Icon name="house" size={17} /> Your house</button><button type="button" aria-pressed={mode === 'brief'} onClick={() => setParams({ mode: 'brief' })}><Icon name="edit" size={17} /> {brief ? 'Edit brief' : 'Create brief'}</button><span>{mode === 'design' ? 'Explore your design or edit your brief to make changes.' : 'One section at a time. Your design is a click away.'}</span></div>
-    {mode === 'brief' && <div className="consultation-layout"><aside className="consultation-sidebar"><ol className="consultation-steps">{titles.map((title, i) => <li key={title} aria-current={i === step ? 'step' : undefined}><button type="button" disabled={i > furthest || busy} onClick={() => { setStep(i); setError(''); }}><span className="consultation-step-number">{i < step ? <Icon name="check" size={16} /> : i + 1}</span><span>{title}<small>{i === step ? 'In progress' : i <= furthest ? 'Available to review' : 'Up next'}</small></span></button></li>)}</ol><div className="consultation-tip"><Icon name="info" /><h3>Designed around you</h3><p>Your answers shape the concept. Use Save draft whenever you want to pause.</p></div></aside>
-    <div><form className="studio-panel consultation-form" onSubmit={(e) => { e.preventDefault(); save(review, !review); }}>
+    {mode === 'brief' && <div className="consultation-layout"><aside className="consultation-sidebar"><ol className="consultation-steps">{titles.map((title, i) => {
+      const section = progress.sections[i];
+      const complete = section ? section.complete : acknowledged;
+      return <li key={title} aria-current={i === step ? 'step' : undefined}><button type="button" disabled={i > furthest || busy} onClick={() => { setStep(i); setError(''); }}><span className="consultation-step-number">{complete ? <Icon name="check" size={16} /> : i + 1}</span><span>{title}<small>{section ? `${section.answered} of ${section.total} required` : 'Check and confirm'}</small></span></button></li>;
+    })}</ol><div className="consultation-tip"><Icon name="info" /><h3>One section at a time</h3><p>Required answers help us create your concept. Optional details are saved for review. Save draft lets you pause with unanswered questions.</p></div></aside>
+    <div><form ref={formRef} noValidate className="studio-panel consultation-form" onSubmit={(e) => { e.preventDefault(); save(review, !review); }}>
       <span className="studio-eyebrow">STEP {step + 1} OF {titles.length}</span><h2 ref={heading} tabIndex={-1}>{review ? 'Does this feel like your home?' : config.steps[step].title}</h2><p className="consultation-intro">{review ? 'Review your answers before creating a concept. You can go back and edit any section.' : DESCRIPTIONS[step]}</p>
-      <progress className="consultation-progress" value={step + 1} max={titles.length} aria-label="Consultation progress" />
+      <div className="consultation-completion"><span>{progress.answered} of {progress.total} required answers ready</span><span>{Math.round(progress.answered / Math.max(1, progress.total) * 100)}%</span></div>
+      <progress className="consultation-progress" value={progress.answered} max={Math.max(1, progress.total)} aria-label="Required answers completed" />
       {error && <Notice>{error}</Notice>}{message && <Notice type="success">{message}</Notice>}
-      {!review ? <div className="consultation-fields">{config.steps[step].questions.filter((q) => visible(q, answers)).map((q) => <div key={q.key} className={q.type === 'textarea' || q.type === 'multiselect' ? 'field-span' : ''}>{q.type === 'multiselect' ? <fieldset className="field consultation-checkbox-field" aria-describedby={`${q.key}-hint${fields[q.key] ? ` ${q.key}-error` : ''}`} aria-required={q.required || undefined}><legend className="field__label">{q.label}</legend><div className="field__hint" id={`${q.key}-hint`}>{q.hint}</div><div className="consultation-checkboxes">{q.options.map((option) => <label className="checkbox" key={option}><input type="checkbox" checked={(Array.isArray(answers[q.key]) ? answers[q.key] : []).includes(option)} onChange={(e) => { const selected = Array.isArray(answers[q.key]) ? answers[q.key] : []; change(q, e.target.checked ? [...selected, option] : selected.filter((item) => item !== option)); }} />{option}</label>)}</div>{fields[q.key] && <div className="field__error" id={`${q.key}-error`} role="alert">{fields[q.key]}</div>}</fieldset> : <FormField label={q.label} hint={q.hint} error={fields[q.key]} required={q.required} optional={!q.required} as={q.options ? 'select' : q.type === 'textarea' ? 'textarea' : 'input'} type={q.type === 'number' ? 'number' : 'text'} min={q.min} max={q.max} maxLength={q.type === 'number' ? undefined : 2000} rows={3} step={q.key === 'width' || q.key === 'length' ? 'any' : 1} value={answers[q.key] ?? ''} onChange={(e) => change(q, e.target.value)}>{q.options && <><option value="">Choose an option</option>{q.options.map((o) => <option key={o}>{o}</option>)}</>}</FormField>}</div>)}</div> : <><div className="brief-summary"><span><strong>{answers.width} x {answers.length} m</strong>Plot dimensions</span><span><strong>{answers.bedrooms} bed / {answers.bathrooms} bath</strong>Required rooms</span><span><strong>{Number(answers.budget || 0).toLocaleString('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 })}</strong>Budget</span><span><strong>{answers.style}</strong>Architectural style</span></div><div className="brief-review">{config.steps.map((s, i) => <details key={s.title}><summary>{s.title}<span>View answers</span></summary><Button size="sm" variant="ghost" onClick={() => setStep(i)}>Edit this section</Button><dl>{s.questions.filter((q) => visible(q, answers) && answers[q.key] !== undefined).map((q) => <div key={q.key}><dt>{q.label}</dt><dd>{Array.isArray(answers[q.key]) ? answers[q.key].join(', ') : answers[q.key]}</dd></div>)}</dl></details>)}</div><div className="consultation-assumptions"><h3>About your concept</h3><p>We currently support flat, rectangular plots and single-storey homes. Special access needs and future extensions are recorded for review. Layouts and costs are illustrative.</p></div><label className="consultation-ack"><input type="checkbox" checked={acknowledged} onChange={(e) => setAcknowledged(e.target.checked)} required /><span>These answers reflect my needs. I understand this is an early house concept.</span></label></>}
-      <div className="consultation-actions"><Button variant="ghost" disabled={step === 0 || busy} icon="arrowLeft" onClick={() => setStep(step - 1)}>Back</Button><div><Button variant="secondary" disabled={busy} onClick={() => save()}>Save draft</Button><Button type="submit" loading={busy} icon="arrowRight">{review ? 'Create my concept' : 'Save & continue'}</Button></div></div>
+      {!review ? <>
+        {step === 0 && <ConsultationScopeNotice answers={answers} />}
+        <div className="consultation-fields">{config.steps[step].questions.filter((q) => visible(q, answers)).map((question) =>
+          <ConsultationQuestion key={question.key} question={question} value={answers[question.key]} error={fields[question.key]} disabled={busy} onChange={(value) => change(question, value)} />
+        )}</div>
+      </> : <>
+        <ConsultationReview config={config} answers={answers} busy={busy} onEdit={setStep} />
+        <label className="consultation-ack"><input type="checkbox" checked={acknowledged} disabled={busy} onChange={(e) => { setAcknowledged(e.target.checked); setError(''); }} /><span>These answers reflect my needs. I understand which requests are generated and which need further review.</span></label>
+      </>}
+      <div className="consultation-actions"><Button variant="ghost" disabled={step === 0 || busy} icon="arrowLeft" onClick={() => setStep(step - 1)}>Back</Button><div><Button variant="secondary" disabled={busy} onClick={() => save()}>Save draft</Button><Button type="submit" loading={busy} icon="arrowRight">{review ? 'Confirm brief & create concept' : 'Save & continue'}</Button></div></div>
     </form>
     <div className="consultation-footnote"><Icon name="info" size={14} /> {cloudMode ? 'Saved to your account / Log in to revisit your answers later.' : 'Saved on this device / Your answers can be revisited later.'}</div></div></div>}
     {mode === 'design' && brief && <div className="concept-anchor">{(dirty || brief.draft_revision !== revision) && <Notice type="info">This concept uses your last confirmed brief. Edit and confirm your brief to update it.</Notice>}<PrototypeConcept brief={brief} /></div>}

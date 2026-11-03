@@ -1,0 +1,35 @@
+.consultation-completion { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; font-size: .68rem; color: #607258; }
+.consultation-question { min-width: 0; padding-bottom: 20px; }
+.project-workspace .consultation-question .field { margin-bottom: 7px; }
+.consultation-question .field__hint { margin-top: 6px; }
+.consultation-impact { display: inline-flex; padding: 3px 7px; font-size: .61rem; line-height: 1.5; border-radius: 4px; color: #426044; background: #edf3e8; }
+.consultation-impact--recorded { background: #f2f0e9; color: #75654b; }
+.consultation-impact--cost { background: #edf2f5; color: #486473; }
+.consultation-required { font-size: .62rem; font-weight: 400; color: #687561; margin-left: 8px; }
+.consultation-choice-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(125px,1fr)); gap: 10px; margin-top: 12px; }
+.consultation-choice { display: flex; gap: 9px; align-items: flex-start; padding: 15px 12px; border: 1px solid #d7dfd0; border-radius: 10px; background: #fbfcf8; cursor: pointer; }
+.consultation-choice.is-selected { border-color: #376147; background: #edf3e6; box-shadow: inset 0 0 0 1px #376147; }
+.consultation-choice input { flex-shrink: 0; accent-color: #285c46; margin: 3px 0 0; width: 16px; height: 16px; }
+.consultation-choice:focus-within { outline: 2px solid var(--color-focus); outline-offset: 3px; }
+.consultation-choice > span { font-size: .81rem; font-weight: 600; }
+.consultation-choice small { display: block; font-size: .69rem; font-weight: 400; line-height: 1.65; color: #65725d; margin-top: 6px; }
+.consultation-choice-grid input:disabled, .consultation-question fieldset:disabled label { cursor: wait; }
+.consultation-question .consultation-checkboxes { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); padding: 6px 0; }
+.consultation-question .consultation-checkboxes label { min-height: 32px; }
+.consultation-readiness { display: flex; align-items: flex-start; gap: 11px; border: 1px solid #d5e2ca; border-radius: 10px; background: #eff5e8; color: #365a3d; padding: 17px; margin: 0 0 20px; }
+.consultation-readiness > svg { flex-shrink: 0; margin-top: 2px; }
+.consultation-readiness strong { font-size: .81rem; }
+.consultation-readiness p { margin: 7px 0 0; font-size: .76rem; line-height: 1.8; }
+.consultation-readiness--warning { color: #81502e; background: #fff5e9; border-color: #ecd8ba; }
+.consultation-support-summary { padding: 18px; margin: 20px 0; background: #f5f6f0; border: 1px solid #e3e7db; border-radius: 10px; }
+.studio .consultation-support-summary h3 { font-size: .9rem; }
+.consultation-support-summary p { color: #63705b; font-size: .76rem; line-height: 1.85; margin: 10px 0 0; }
+.brief-review dd { white-space: pre-wrap; }
+.brief-review details > .btn { margin-top: 10px; }
+@media(max-width: 600px) {
+  .consultation-choice-grid { grid-template-columns: 1fr; }
+  .consultation-choice { padding: 12px; }
+  .consultation-choice small { margin-top: 3px; }
+  .consultation-question .consultation-checkboxes { grid-template-columns: 1fr; gap: 4px; }
+  .consultation-readiness { padding: 14px; }
+}

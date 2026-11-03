@@ -2,7 +2,7 @@ import catalogue from './plans.json';
 import questionnaire from './consultation.json';
 import { estimateAllLevels } from './estimator';
 import { recommend } from './engine';
-import { validateAnswers as validate } from './validation';
+import { validateConsultation, siteScopeErrors } from '../utils/consultation';
 
 const STORAGE_KEY = 'smarthouse.frontend-prototype.v1';
 const now = () => new Date().toISOString();
@@ -23,6 +23,11 @@ function load(storageKey = STORAGE_KEY) {
 function persist(state, storageKey = STORAGE_KEY) {
   try { localStorage.setItem(storageKey, JSON.stringify(state)); }
   catch { fail('Your browser could not save this project. Check browser storage permissions or available space.'); }
+}
+function validate(answers, complete = false) {
+  const errors = validateConsultation(questionnaire.steps, answers, { complete });
+  if (complete) Object.assign(errors, siteScopeErrors(answers));
+  if (Object.keys(errors).length) fail('Please check the highlighted answers.', 400, errors);
 }
 
 /** Local demo operations only. No network, API server, or database is used. */

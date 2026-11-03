@@ -8,7 +8,8 @@
           "key": "location",
           "label": "Where will you build?",
           "type": "text",
-          "required": true
+          "required": true,
+          "hint": "Town or area is enough. Location is recorded for review; it does not change the demo rates."
         },
         {
           "key": "width",
@@ -16,7 +17,8 @@
           "type": "number",
           "min": 5,
           "max": 200,
-          "required": true
+          "required": true,
+          "hint": "Enter the full boundary width in metres, not the desired house width. Decimals are allowed."
         },
         {
           "key": "length",
@@ -24,7 +26,8 @@
           "type": "number",
           "min": 5,
           "max": 200,
-          "required": true
+          "required": true,
+          "hint": "Enter the full plot length in metres. The demo fit check allows 1 m on each boundary."
         },
         {
           "key": "shape",
@@ -33,7 +36,8 @@
             "Rectangular",
             "Other"
           ],
-          "required": true
+          "required": true,
+          "hint": "The generator currently supports rectangular plots. Other shapes can be saved for further review."
         },
         {
           "key": "terrain",
@@ -43,7 +47,8 @@
             "Sloped",
             "Unknown"
           ],
-          "required": true
+          "required": true,
+          "hint": "Sloped sites need further review. Unknown terrain is kept explicit and a generated concept assumes a flat site."
         },
         {
           "key": "access",
@@ -55,7 +60,8 @@
             "West",
             "Unknown"
           ],
-          "required": true
+          "required": true,
+          "hint": "The road-facing edge helps orient the plot-fit check. Choose Unknown if you are unsure."
         }
       ]
     },
@@ -68,7 +74,18 @@
           "type": "number",
           "min": 1,
           "max": 100000000,
-          "required": true
+          "required": true,
+          "hint": "Enter the amount available for construction in Rand, excluding the price of buying the land."
+        },
+        {
+          "key": "spaceLevel",
+          "label": "How much space would you like in each room?",
+          "options": [
+            "Compact",
+            "Balanced",
+            "Generous"
+          ],
+          "hint": "Room sizes are separate from finish quality. Balanced sizes are used if you leave this optional choice blank."
         },
         {
           "key": "finish",
@@ -78,7 +95,8 @@
             "Standard",
             "Premium"
           ],
-          "required": true
+          "required": true,
+          "hint": "This sets the illustrative rate per square metre. Materials shown in the house views remain indicative."
         },
         {
           "key": "budgetIncludes",
@@ -93,7 +111,7 @@
             "Contingency"
           ],
           "required": true,
-          "hint": "Select all that apply."
+          "hint": "Select all that apply. These expectations are recorded; the estimate does not separately price each selected item."
         },
         {
           "key": "occupants",
@@ -101,7 +119,8 @@
           "type": "number",
           "min": 1,
           "max": 30,
-          "required": true
+          "required": true,
+          "hint": "Include adults and children who will usually live here. Room counts are entered separately below."
         },
         {
           "key": "bedrooms",
@@ -109,7 +128,8 @@
           "type": "number",
           "min": 1,
           "max": 6,
-          "required": true
+          "required": true,
+          "hint": "Count the bedrooms you need now, including any required guest bedroom."
         },
         {
           "key": "bathrooms",
@@ -117,7 +137,8 @@
           "type": "number",
           "min": 1,
           "max": 4,
-          "required": true
+          "required": true,
+          "hint": "Count all full bathrooms, including the main en-suite if you select it. Use at least two if you need an en-suite and a shared bathroom."
         }
       ]
     },
@@ -131,7 +152,8 @@
             "Yes",
             "No"
           ],
-          "required": true
+          "required": true,
+          "hint": "A dedicated quiet office adds a room. A shared workspace is recorded without adding a room."
         },
         {
           "key": "office",
@@ -144,7 +166,8 @@
             "key": "workFromHome",
             "value": "Yes"
           },
-          "required": true
+          "required": true,
+          "hint": "Only Dedicated quiet office adds an office to this layout. Shared workspace remains a request for review."
         },
         {
           "key": "guests",
@@ -154,7 +177,8 @@
             "Sometimes",
             "Often"
           ],
-          "required": true
+          "required": true,
+          "hint": "This helps record household needs. Hosting frequency does not automatically add a guest bedroom."
         },
         {
           "key": "guestNeeds",
@@ -164,7 +188,8 @@
             "key": "guests",
             "value": "Often"
           },
-          "required": true
+          "required": true,
+          "hint": "Describe the sleeping arrangements you need. Include a guest bedroom in your bedroom count if essential."
         },
         {
           "key": "kitchen",
@@ -173,12 +198,27 @@
             "Open plan",
             "Separate"
           ],
-          "required": true
+          "required": true,
+          "hint": "This changes whether the kitchen shares the living space or has its own room."
         },
         {
           "key": "storage",
           "label": "Storage, laundry, pantry, and outdoor needs",
-          "type": "textarea"
+          "type": "textarea",
+          "hint": "For example: a pantry, extra cupboards, laundry or covered outdoor space. Saved for review, not automatically generated."
+        },
+        {
+          "key": "homeFeatures",
+          "label": "Which additional spaces should the house include?",
+          "type": "multiselect",
+          "options": [
+            "Main en-suite",
+            "Walk-in wardrobe",
+            "Separate dining room",
+            "Entertainment room",
+            "Double garage"
+          ],
+          "hint": "Optional. Selected spaces are generated and included in the footprint and demo estimate. An en-suite uses one of your bathroom spaces; it does not add to the count."
         }
       ]
     },
@@ -193,7 +233,19 @@
             "Traditional",
             "Minimalist"
           ],
-          "required": true
+          "required": true,
+          "hint": "This changes the roof profile and exterior palette. Floor-plan arrangement and room sizes are selected separately."
+        },
+        {
+          "key": "layoutPreference",
+          "label": "Preferred floor-plan arrangement",
+          "options": [
+            "Best fit",
+            "Linear living",
+            "Split living",
+            "Wide family residence"
+          ],
+          "hint": "Best fit compares three reviewed dataset-derived families. A selected family is kept even if it exceeds the plot or budget, with conflicts shown."
         },
         {
           "key": "privacy",
@@ -202,7 +254,8 @@
             "Separate from entertaining spaces",
             "No preference"
           ],
-          "required": true
+          "required": true,
+          "hint": "Recorded for review. The current layout always separates private rooms from the front living area."
         },
         {
           "key": "accessibility",
@@ -212,7 +265,8 @@
             "Step-free access",
             "Other needs"
           ],
-          "required": true
+          "required": true,
+          "hint": "These needs are saved for professional review. The prototype does not verify accessible clearances or step-free construction."
         },
         {
           "key": "accessibilityNotes",
@@ -222,23 +276,26 @@
             "key": "accessibility",
             "value": "Other needs"
           },
-          "required": true
+          "required": true,
+          "hint": "Describe the movement, doorway or access needs that should be checked during further design."
         },
         {
           "key": "essentials",
           "label": "Other essential features",
           "type": "textarea",
-          "hint": "These will be recorded for review; automatic support has not yet been implemented."
+          "hint": "List features that must not be overlooked. These are saved for review and are not automatically added."
         },
         {
           "key": "optionalFeatures",
           "label": "Which features could change to meet the budget?",
-          "type": "textarea"
+          "type": "textarea",
+          "hint": "Describe possible compromises. The generator will not silently remove rooms or features to meet the budget."
         },
         {
           "key": "futurePlans",
           "label": "Future extensions or household changes",
-          "type": "textarea"
+          "type": "textarea",
+          "hint": "For example: another bedroom later or a changing household. Extensions are recorded for review, not generated."
         }
       ]
     }

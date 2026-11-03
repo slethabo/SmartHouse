@@ -1,0 +1,166 @@
+{
+  "dataset": "Floor Plans 500 v1",
+  "license": "CC BY 4.0 (as declared by the supplied export)",
+  "sourceUrl": "https://universe.roboflow.com/umair-ab9ex/floor-plans-500-xqdyk/dataset/1",
+  "note": "Source regions were visually reviewed. Metric dimensions are prototype design assumptions, not recovered source measurements. YOLO classes are not used as room semantics.",
+  "splits": {
+    "train": {
+      "images": 837,
+      "sourcePlans": 279
+    },
+    "valid": {
+      "images": 80,
+      "sourcePlans": 80
+    },
+    "test": {
+      "images": 43,
+      "sourcePlans": 43
+    }
+  },
+  "references": [
+    {
+      "templateId": "linear-649",
+      "sourceFile": "649_png.rf.6054d34ffc6bb4ca30b72eae87a35c2a.jpg",
+      "sha256": "bf656ca38fe4818be9d4b6455c0a7280e2e36a9c6734d7f9e9285cd70f58d2de",
+      "reviewedRegions": [
+        {
+          "name": "Bedroom",
+          "type": "bedroom",
+          "bounds": [
+            0.14,
+            0.22,
+            0.33,
+            0.31
+          ]
+        },
+        {
+          "name": "Living",
+          "type": "living",
+          "bounds": [
+            0.49,
+            0.21,
+            0.43,
+            0.41
+          ]
+        },
+        {
+          "name": "Kitchen",
+          "type": "kitchen",
+          "bounds": [
+            0.7,
+            0.63,
+            0.22,
+            0.23
+          ]
+        },
+        {
+          "name": "Bathroom",
+          "type": "bathroom",
+          "bounds": [
+            0.15,
+            0.58,
+            0.32,
+            0.18
+          ]
+        }
+      ],
+      "review": "Manually reviewed spatial arrangement. Original balcony and sauna are not reproduced; the design is adapted to the confirmed brief."
+    },
+    {
+      "templateId": "split-1115",
+      "sourceFile": "1115_png.rf.a092b2a40caa14606bfe1907dbfa29eb.jpg",
+      "sha256": "c6542828ba440529b55a23f708fcbdfade3847de7606a730c1a8d115903e209e",
+      "reviewedRegions": [
+        {
+          "name": "Bedroom wing 1",
+          "type": "bedroom",
+          "bounds": [
+            0.12,
+            0.09,
+            0.28,
+            0.32
+          ]
+        },
+        {
+          "name": "Living",
+          "type": "living",
+          "bounds": [
+            0.5,
+            0.09,
+            0.39,
+            0.43
+          ]
+        },
+        {
+          "name": "Bedroom wing 2",
+          "type": "bedroom",
+          "bounds": [
+            0.59,
+            0.54,
+            0.3,
+            0.3
+          ]
+        },
+        {
+          "name": "Kitchen",
+          "type": "kitchen",
+          "bounds": [
+            0.12,
+            0.42,
+            0.28,
+            0.28
+          ]
+        }
+      ],
+      "review": "Manually reviewed spatial arrangement. The source's offset boundary is regularised to a rectangular envelope, and room counts are adapted."
+    },
+    {
+      "templateId": "wide-979",
+      "sourceFile": "979_png.rf.805f3efc565f3b3b9414876cceadd874.jpg",
+      "sha256": "55007f8e8d47eb152e0cdb429ea0a386d6d45ab71b0d6ba40427f93b12d376f8",
+      "reviewedRegions": [
+        {
+          "name": "Garage / service wing",
+          "type": "garage",
+          "bounds": [
+            0.08,
+            0.26,
+            0.18,
+            0.37
+          ]
+        },
+        {
+          "name": "Central living",
+          "type": "living",
+          "bounds": [
+            0.45,
+            0.11,
+            0.2,
+            0.39
+          ]
+        },
+        {
+          "name": "Kitchen / dining",
+          "type": "kitchen",
+          "bounds": [
+            0.45,
+            0.5,
+            0.21,
+            0.3
+          ]
+        },
+        {
+          "name": "Bedroom wing",
+          "type": "bedroom",
+          "bounds": [
+            0.66,
+            0.11,
+            0.31,
+            0.23
+          ]
+        }
+      ],
+      "review": "Manually reviewed spatial arrangement, including the garage/service wing. Porch, sauna and original dimensions are not copied; optional suites and extra rooms are project adaptations."
+    }
+  ]
+}

@@ -42,7 +42,11 @@ export default function House3DView({ house }) {
       const ground = new THREE.Mesh(new THREE.BoxGeometry(house.width + 6, .15, house.length + 7), new THREE.MeshStandardMaterial({ color: '#aabb96', roughness: 1 }));
       ground.position.y = -.24; ground.receiveShadow = true; scene.add(ground);
       const path = new THREE.Mesh(new THREE.BoxGeometry(1.6, .08, 3), new THREE.MeshStandardMaterial({ color: '#c8bfaa' }));
-      path.position.set(0,-.1,-house.length / 2 - 1.5); path.receiveShadow = true; scene.add(path);
+      const entrance = house.doors.find((door) => door.entrance);
+      const direction={front:[0,-1],back:[0,1],left:[-1,0],right:[1,0]}[entrance.edge];
+      if(entrance.axis==='y')path.rotation.y=Math.PI/2;
+      path.position.set(entrance.x+(entrance.axis==='x'?entrance.length/2:0)+direction[0]*1.5-house.width/2,-.1,
+        entrance.y+(entrance.axis==='y'?entrance.length/2:0)+direction[1]*1.5-house.length/2); path.receiveShadow = true; scene.add(path);
       for (const x of [-house.width / 2 - 1.3, house.width / 2 + 1.3]) {
         const tree = new THREE.Mesh(new THREE.SphereGeometry(.7,12,8),new THREE.MeshStandardMaterial({ color: '#6d8b58', roughness: 1 }));
         tree.position.set(x,.5,-house.length / 2 + 1); tree.castShadow = true; scene.add(tree);

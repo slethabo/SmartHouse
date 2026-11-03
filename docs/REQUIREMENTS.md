@@ -8,6 +8,13 @@ The platform converts an architectural consultation into a confirmed brief, pers
 
 ## Actors
 
+**Implemented scope refinement:** the consultation can now adapt three manually
+reviewed dataset-derived layout families with Compact/Balanced/Generous room sizes
+and optional en-suite, wardrobe, dining, entertainment and garage spaces. Finish
+quality is a separate choice. Rectangular, single-storey and concept-only limits
+remain. See [dataset templates](DATASET_TEMPLATES.md) for source provenance,
+adaptation assumptions, algorithm boundaries and verification.
+
 | Actor | Responsibilities |
 |---|---|
 | Homeowner | Manage own projects, answer questions, confirm briefs, explore designs, revise requirements, and download packages. |

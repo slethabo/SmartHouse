@@ -1,5 +1,31 @@
 # Frontend Prototype Progress
 
+## Latest: dataset-derived layout families
+
+The generator now adapts three visually reviewed source plans (649, 1115 and 979)
+from the supplied training dataset. Consultation adds optional room-size profiles,
+layout preference and actual additional spaces: main en-suite, walk-in wardrobe,
+dining, entertainment and double garage. Premium finish remains a pricing choice.
+Shared room/wall/opening geometry drives the plan, exterior and 3D model. The result
+page identifies the source, displays its original image separately, explains the
+adaptation and compares alternative families. Original source images and licence
+attribution are packaged locally; no model was trained. Dimensions are prototype
+assumptions rather than recovered source measurements. See
+[dataset implementation](DATASET_TEMPLATES.md) for scope and integration details.
+
+## Earlier milestones
+
+Consultation refinement now adds step-level validation for Save & continue while
+keeping incomplete Save draft operations available. Required-answer progress and
+section completion follow visible conditional questions. Style, finish and kitchen
+choices use descriptive cards; question hints and impact labels distinguish
+generated behaviour from recorded-only needs. Brief review shows an initial demo
+estimate/plot check, explicit unsupported-site or unknown-terrain messages, and
+the limitations of recorded requirements. Shared frontend rules live in
+`client/src/utils/consultation.js`. The prototype test runner now has 12 passing
+cases, including conditional progress, empty selections, whitespace-only answers,
+and preservation of unsupported-site drafts. This work does not connect Supabase.
+
 The consultation result now opens a dedicated house presentation page with a front
 exterior gallery, six selectable views, room/area specifications, a budget summary,
 cost allocations, plot-fit information and SVG/JSON downloads. Its visual language
@@ -19,3 +45,18 @@ The prototype now uses a front living zone and a central hallway with bedrooms a
 Backend specifications and source are retained for later implementation. The frontend demo adapter in `client/src/demo/store.js` now supplies the operations previously served by the API. `npm run test:prototype` verifies persistence, confirmation, conflict handling, local catalogue operations, and storage failure feedback without a network.
 
 Project pages now separate Your house from Edit brief. Confirmed projects open in the design workspace. Brief review sections and design explanations are collapsed by default; consultation actions stay near the viewport edge. The dashboard header and 3D viewport are compact to reduce vertical scrolling.
+
+
+### Source-plan architecture revision
+
+The active generator now uses `sourceLayouts.js` cores instead of rectangular
+column packing. The three sources retain distinct room relationships and footprint
+setbacks. Extra rooms form marked additions. Shared `architecture.js` geometry
+provides mono-pitch, butterfly or stepped pavilion roofs for Modern designs.
+SVG elevations, perspective and Three.js follow actual exposed walls, recessed
+entrances, terrace positions and roof panels. Area excludes outdoor gaps/terraces.
+Generated snapshots are schema 4 / `source-plans-v3`; persist terraces, roofDesign,
+room zones/addition flags and wall ownership alongside existing geometry.
+
+Browser interaction review is unavailable because the computer-use runtime cannot
+initialise. Static SVG rendering and automated geometry/model checks are available.
