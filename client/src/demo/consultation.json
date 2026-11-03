@@ -83,9 +83,17 @@
         {
           "key": "budgetIncludes",
           "label": "What does your budget include?",
-          "type": "textarea",
+          "type": "multiselect",
+          "options": [
+            "Labour",
+            "Materials",
+            "Site preparation",
+            "Professional fees",
+            "Landscaping",
+            "Contingency"
+          ],
           "required": true,
-          "hint": "Include your expectations for labour, fees, site preparation, landscaping, and contingency."
+          "hint": "Select all that apply."
         },
         {
           "key": "occupants",

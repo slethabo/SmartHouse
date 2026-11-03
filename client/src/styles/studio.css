@@ -68,6 +68,10 @@
 .consultation-progress::-webkit-progress-value { background: #285c46; border-radius: 4px; }
 .consultation-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); column-gap: 24px; }
 .field-span { grid-column: 1/-1; }
+.consultation-checkbox-field { min-width: 0; border: 0; padding: 0; }
+.consultation-checkbox-field .field__label { padding: 0; }
+.consultation-checkboxes { display: grid; gap: 10px; margin-top: 12px; }
+.consultation-checkboxes .checkbox { font-size: .85rem; }
 .consultation-actions { border-top: 1px solid #e7ebe2; padding-top: 22px; margin-top: 20px; display: flex; gap: 16px; align-items: center; justify-content: space-between; }
 .consultation-actions > div { display: flex; gap: 10px; }
 .consultation-footnote { display: flex; gap: 6px; align-items: center; justify-content: center; color: #64715e; font-size: .72rem; margin-top: 16px; }

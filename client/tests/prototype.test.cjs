@@ -16,7 +16,7 @@ const modelModule = new Module(__filename);
 modelModule.paths = module.paths;
 modelModule._compile(modelBundle.outputFiles[0].text, __filename);
 const { buildHouseModel, disposeHouseModel, THREE } = modelModule.exports;
-const answers = { location: 'Demo', width: 20, length: 30, shape: 'Rectangular', terrain: 'Flat', access: 'South', budget: 1500000, finish: 'Basic', budgetIncludes: 'Labour and materials', occupants: 4, bedrooms: 3, bathrooms: 2, workFromHome: 'No', guests: 'Rarely', kitchen: 'Open plan', style: 'Modern', privacy: 'No preference', accessibility: 'None stated' };
+const answers = { location: 'Demo', width: 20, length: 30, shape: 'Rectangular', terrain: 'Flat', access: 'South', budget: 1500000, finish: 'Basic', budgetIncludes: ['Labour', 'Materials'], occupants: 4, bedrooms: 3, bathrooms: 2, workFromHome: 'No', guests: 'Rarely', kitchen: 'Open plan', style: 'Modern', privacy: 'No preference', accessibility: 'None stated' };
 beforeEach(() => {
   const storage = new Map();
   global.localStorage = { getItem: (key) => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) };
