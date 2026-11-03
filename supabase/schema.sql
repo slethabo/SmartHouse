@@ -84,7 +84,8 @@ create table public.pricing_releases (
   assumptions text not null,
   exclusions text not null,
   effective_on date not null,
-  published_by uuid references public.profiles(id) on delete set null,
+  -- Audit UUID retained even if the publisher later deletes their Auth account.
+  published_by uuid,
   published_at timestamptz not null default now(),
   check (standard_rate_per_m2 >= basic_rate_per_m2 and premium_rate_per_m2 >= standard_rate_per_m2
     and premium_rate_per_m2 < 10000000)
@@ -370,6 +371,45 @@ deferrable initially deferred for each row execute function private.check_estima
 create constraint trigger estimate_lines_checked after insert or update or delete on public.cost_estimate_lines
 deferrable initially deferred for each row execute function private.check_estimate_lines();
 
+create function private.validate_estimate() returns trigger
+language plpgsql set search_path = '' as $$
+declare area numeric; budget numeric; finish text; rate numeric; within boolean;
+begin
+  select c.floor_area_m2,b.budget,lower(b.answers->>'finish'),c.within_budget,
+    case new.finish_level when 'basic' then r.basic_rate_per_m2
+      when 'standard' then r.standard_rate_per_m2 when 'premium' then r.premium_rate_per_m2 end
+  into area,budget,finish,within,rate
+  from public.house_concepts c join public.design_briefs b on b.id=c.brief_id
+  join public.pricing_releases r on r.id=c.pricing_release_id where c.id=new.concept_id;
+  if not found or new.floor_area_m2 is distinct from area or new.budget_snapshot is distinct from budget
+    or new.finish_level is distinct from finish or new.rate_per_m2 is distinct from rate
+    or new.total is distinct from round(area*rate)
+    or within is distinct from (new.total <= budget) then
+    raise exception 'Estimate must match the saved concept, confirmed budget/finish, and pinned pricing release';
+  end if;
+  return new;
+end;
+$$;
+create trigger estimate_snapshot_validated before insert on public.cost_estimates
+for each row execute function private.validate_estimate();
+
+create function private.check_concept_estimate() returns trigger
+language plpgsql set search_path = '' as $$
+declare concept uuid;
+begin
+  if tg_table_name = 'house_concepts' then concept := new.id; else concept := old.concept_id; end if;
+  if exists(select 1 from public.house_concepts where id=concept)
+    and not exists(select 1 from public.cost_estimates where concept_id=concept) then
+    raise exception 'Save the house concept and its estimate in the same transaction';
+  end if;
+  return null;
+end;
+$$;
+create constraint trigger concept_estimate_required after insert on public.house_concepts
+deferrable initially deferred for each row execute function private.check_concept_estimate();
+create constraint trigger concept_estimate_retained after delete on public.cost_estimates
+deferrable initially deferred for each row execute function private.check_concept_estimate();
+
 -- RLS: homeowners see their own project tree; admins publish pricing, not read other users' designs.
 do $$
 declare t text;
@@ -427,6 +467,7 @@ using (exists(select 1 from public.projects p where p.id=project_id and p.owner_
 -- Explicit EXECUTE grants; no function inherits PUBLIC execution rights.
 revoke all on function private.touch_updated_at(), private.handle_new_user(), private.create_draft(),
   private.reject_snapshot_update(), private.check_estimate_lines(),
+  private.validate_estimate(), private.check_concept_estimate(),
   private.save_draft(uuid,integer,jsonb), private.confirm_brief(uuid,integer,boolean),
   public.my_role(), public.save_consultation_draft(uuid,integer,jsonb), public.confirm_design_brief(uuid,integer,boolean)
 from public, anon, authenticated;

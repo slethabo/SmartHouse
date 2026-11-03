@@ -1,5 +1,15 @@
 # Frontend Prototype Progress
 
+The consultation result now opens a dedicated house presentation page with a front
+exterior gallery, six selectable views, room/area specifications, a budget summary,
+cost allocations, plot-fit information and SVG/JSON downloads. Its visual language
+uses forest green, warm neutral surfaces and editorial typography. All illustrations
+still use the generated geometry; no unrelated house renders or payment flows were
+added. `PrototypeConcept` remains the existing import entry point and delegates to
+`HouseConceptPage`. Shared SVG drawings live in `components/plans/ConceptDrawings.jsx`.
+The page still consumes the local adapter's confirmed brief, not Supabase records.
+See [house page integration contract](HOUSE_CONCEPT_PAGE.md) for the data handoff.
+
 The active prototype runs entirely in React/Vite, with localStorage persistence and illustrative catalogue/pricing data. No backend, PostgreSQL, or login is required. Run `npm run dev` and open the displayed URL.
 
 Users can create projects, complete conditional consultation questions, save/resume drafts, confirm briefs, explore schematic room arrangements and costs, and download SVG floor plans and JSON summaries. Library browsing, saved designs, and demo rate edits also run locally. Data stays in this browser; previous backend records remain separate and unchanged.
