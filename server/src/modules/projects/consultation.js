@@ -13,7 +13,7 @@ const steps = [
   { title: 'Budget and household', questions: [
     { key: 'budget', label: 'Construction budget (ZAR)', type: 'number', min: 1, max: 100000000, required: true },
     { key: 'finish', label: 'Preferred finishes', options: ['Basic', 'Standard', 'Premium'], required: true },
-    { key: 'budgetIncludes', label: 'What does your budget include?', type: 'textarea', required: true, hint: 'Include your expectations for labour, fees, site preparation, landscaping, and contingency.' },
+    { key: 'budgetIncludes', label: 'What does your budget include?', type: 'multiselect', options: ['Labour', 'Materials', 'Site preparation', 'Professional fees', 'Landscaping', 'Contingency'], required: true, hint: 'Select all that apply.' },
     { key: 'occupants', label: 'How many people will live here?', type: 'number', min: 1, max: 30, required: true },
     { key: 'bedrooms', label: 'Essential bedrooms', type: 'number', min: 1, max: 6, required: true },
     { key: 'bathrooms', label: 'Essential bathrooms', type: 'number', min: 1, max: 4, required: true },
@@ -40,7 +40,8 @@ const questions = steps.flatMap((step) => step.questions);
 const active = (q, answers) => !q.when || answers[q.when.key] === q.when.value;
 const fields = Object.fromEntries(questions.map((q) => [q.key, q.type === 'number'
   ? z.number().finite().min(q.min).max(q.max).int().optional()
-  : q.options ? z.enum(q.options).optional() : z.string().trim().max(2000).optional()]));
+  : q.type === 'multiselect' ? z.array(z.enum(q.options)).optional()
+    : q.options ? z.enum(q.options).optional() : z.string().trim().max(2000).optional()]));
 // Plot dimensions can include decimal metres.
 fields.width = z.number().finite().min(5).max(200).optional();
 fields.length = z.number().finite().min(5).max(200).optional();
@@ -49,7 +50,7 @@ function buildBrief(answers) {
   const result = answerSchema.safeParse(answers);
   if (!result.success) throw badRequest('Please check your consultation answers.');
   const clean = result.data;
-  const missing = questions.filter((q) => active(q, clean) && q.required && (clean[q.key] === undefined || clean[q.key] === ''));
+  const missing = questions.filter((q) => active(q, clean) && q.required && (clean[q.key] === undefined || clean[q.key] === '' || (Array.isArray(clean[q.key]) && clean[q.key].length === 0)));
   if (missing.length) throw badRequest('Complete the required questions before confirming.', { fields: Object.fromEntries(missing.map((q) => [q.key, `${q.label} is required.`])) });
   if (clean.shape !== 'Rectangular' || clean.terrain === 'Sloped') {
     throw badRequest('The initial design scope supports rectangular, flat plots. Your draft can still be saved.', { code: 'UNSUPPORTED_SCOPE' });
