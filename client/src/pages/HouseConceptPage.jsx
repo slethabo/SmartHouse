@@ -128,7 +128,7 @@ export function HouseConceptPage({ brief }) {
         <div className="hc-price"><span>ILLUSTRATIVE ESTIMATE · ITEMIZED MATERIALS + ALLOWANCE</span><strong>{estimate ? money(estimate.total) : priceDataState.error ? 'Estimate unavailable' : 'Loading material prices…'}</strong>
           <small>{a.finish} finish · catalogue prices plus researched South African material benchmarks, with the remaining allowance disclosed below</small>
           <details className="hc-accordion hc-cost-disclosure" id={`${id}-cost-breakdown`}>
-            <summary>View itemized material prices and allowances</summary>
+            <summary>View detailed price breakdown</summary>
             {priceDataState.error && <p className="hc-download-error" role="alert">{priceDataState.error}</p>}
             {!estimate && !priceDataState.error && <p role="status">Loading the catalogue and material price benchmarks…</p>}
             {estimate && <>
@@ -213,7 +213,6 @@ export function HouseConceptPage({ brief }) {
         <p>{estimate
           ? `Catalogue-priced materials total ${money(estimate.catalogueSubtotal)} and researched material benchmarks total ${money(estimate.researchedMaterialsSubtotal)}. The remaining ${money(estimate.allowance)} is a disclosed allowance for other unpriced work and labour.`
           : priceDataState.error || 'Loading catalogue and researched material prices to calculate the estimate.'}</p>
-        <a className="hc-text-link hc-price-breakdown-link" href={`#${id}-cost-breakdown`}>Go to itemized estimate <Icon name="arrowRight" size={15} /></a>
         <p className="hc-fine-print">{estimate?.pricingNote || 'The illustrative estimate uses local catalogue prices and researched material benchmarks when available; the detailed breakdown is loading.'}</p>
         <details className="hc-accordion"><summary>Your stated budget inclusions</summary><p>{formatConsultationAnswer(a.budgetIncludes)}</p><p className="hc-fine-print">Recorded from your brief; these inclusions do not automatically change the quantities in the estimate.</p></details>
       </section>

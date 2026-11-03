@@ -45,6 +45,9 @@
 .hc-price > span { display: block; font-size: .57rem; font-weight: 700; letter-spacing: .09em; color: #6a775e; }
 .hc-price strong { display: block; font-size: clamp(1.65rem,2.6vw,2.3rem); font-weight: 550; letter-spacing: -.05em; line-height: 1.3; margin: 6px 0; overflow-wrap: anywhere; }
 .hc-price small { color: #64705c; font-size: .7rem; }
+.hc-price .hc-cost-disclosure { margin-top: 14px; padding: 0; border-top: 0; }
+.hc-price .hc-cost-disclosure > summary { padding: 11px 14px; border: 1px solid #c8d1c1; border-radius: 7px; background: #f3f5ed; color: #31543d; font-size: .74rem; }
+.hc-price .hc-cost-disclosure[open] > summary { border-radius: 7px 7px 0 0; }
 .hc-budget { display: flex; gap: 9px; padding: 12px; background: #edf3e8; color: #33573b; border-radius: 8px; margin-bottom: 18px; }
 .hc-budget > svg { flex-shrink: 0; margin-top: 1px; }
 .hc-budget strong { display: block; font-size: .72rem; font-weight: 650; }
