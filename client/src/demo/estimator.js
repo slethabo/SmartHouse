@@ -120,12 +120,16 @@ function estimateHouseFromCatalogue(house, ratePerM2, products, benchmarks) {
   const wallArea = Math.max(0, exteriorPerimeter * 3 - windowArea - externalDoorArea);
   const roofDesign = house.roofDesign || (house.roofType === 'flat' ? 'stepped-flat' : house.roofType === 'gable' ? 'gable' : 'mono-pitch');
   const flatRoof = roofDesign === 'stepped-flat' || roofDesign === 'flat';
-  const gutterRuns = ['gable', 'butterfly', 'stepped-pavilions'].includes(roofDesign) ? 2 : roofDesign === 'mono-pitch' ? 1 : 0;
+  const gutterLength = roofDesign === 'Multi-hip'
+    ? 2 * (house.width + house.length)
+    : roofDesign === 'Intersecting gables'
+      ? 2 * Math.max(house.width, house.length)
+      : (['gable', 'butterfly', 'stepped-pavilions'].includes(roofDesign) ? 2 : roofDesign === 'mono-pitch' ? 1 : 0) * house.length;
   const roofArea = getRoofSurfaceArea(house);
   const quantities = {
     brick: Math.ceil(wallArea * 50 * 1.05),
     concrete: +(area * 0.1).toFixed(2),
-    gutter: Math.ceil((gutterRuns * house.length) / 6),
+    gutter: Math.ceil(gutterLength / 6),
   };
   const lines = CATALOGUE_PRODUCTS.map((item) => {
     const product = products.find((candidate) => Number(candidate.id) === item.id);

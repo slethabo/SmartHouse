@@ -192,10 +192,10 @@ test('catalogue and researched material prices are itemized and sum to the estim
   assert.match(unavailable.lines.find((line) => line.key === 'bricks').note, /variable or unavailable/);
 });
 
-test('flat roofs omit sloped-roof-only benchmark materials and missing price data fails explicitly', () => {
+test('legacy flat roofs omit sloped-roof-only benchmark materials and missing price data fails explicitly', () => {
   const benchmarks = JSON.parse(fs.readFileSync(path.join(__dirname, '../src/demo/material_price_benchmarks.json'), 'utf8'));
   const products = JSON.parse(fs.readFileSync(path.join(__dirname, '../../smart_house_products.json'), 'utf8'));
-  const flatHouse = createHouseConcept({ ...answers, style: 'Minimalist' });
+  const flatHouse = { ...createHouseConcept({ ...answers, style: 'Minimalist' }), roofDesign: 'stepped-flat' };
   const estimate = estimateHouseFromCatalogue(flatHouse, flatHouse.rate, products, benchmarks);
   assert.equal(estimate.lines.some((line) => ['roofSheets', 'roofTrusses'].includes(line.key)), false);
   assert.throws(() => estimateHouseFromCatalogue(flatHouse, flatHouse.rate, products), /benchmarks could not be read/);
