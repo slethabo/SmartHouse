@@ -194,11 +194,7 @@ export function HouseConceptPage({ brief }) {
           <span><Icon name="check" size={14} />{house.circulationArea.toFixed(1)} m² circulation</span>
           {house.rooms.some((room) => room.type === 'office') && <span><Icon name="check" size={14} />Dedicated office</span>}
           {house.features.map((feature)=><span key={feature}><Icon name="check" size={14} />{feature}</span>)}
-<<<<<<< HEAD
           <span><Icon name="check" size={14} />{house.roofDesign.replaceAll('-', ' ')}</span></div>
-=======
-          <span><Icon name="check" size={14} />{house.roofDesign}</span></div>
->>>>>>> 15555fd (roof)
         <details className="hc-accordion"><summary>Room dimensions <span>{house.rooms.length} spaces</span></summary>
           <div className="hc-table-wrap"><table><caption className="visually-hidden">Generated room dimensions and areas</caption><thead><tr><th scope="col">Space</th><th scope="col">Dimensions</th><th scope="col">Area</th></tr></thead>
             <tbody>{house.rooms.map((room) => <tr key={room.id}><th scope="row">{room.name}</th><td>{room.width.toFixed(1)} × {room.depth.toFixed(1)} m</td><td>{room.area.toFixed(1)} m²</td></tr>)}</tbody></table></div>

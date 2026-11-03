@@ -21,15 +21,11 @@ const consultationModule = new Module(__filename);
 consultationModule._compile(consultationBundle.outputFiles[0].text, __filename);
 const { validateConsultation, consultationProgress, siteScopeErrors, formatConsultationAnswer } = consultationModule.exports;
 const questionnaire = require('../src/demo/consultation.json');
-<<<<<<< HEAD
 const estimatorBundle = buildSync({ entryPoints: [path.join(__dirname, '../src/demo/estimator.js')], bundle: true, platform: 'node', format: 'cjs', write: false });
 const estimatorModule = new Module(__filename);
 estimatorModule._compile(estimatorBundle.outputFiles[0].text, __filename);
 const { estimateHouseFromCatalogue } = estimatorModule.exports;
-const modelBundle = buildSync({ stdin: { contents: 'export * from "./houseModel.js"; export * as THREE from "three";', resolveDir: path.join(__dirname, '../src/demo'), sourcefile: 'model-test-entry.js' }, bundle: true, platform: 'node', format: 'cjs', write: false });
-=======
 const modelBundle = buildSync({ stdin: { contents: 'export * from "./houseModel.js"; export * from "./architecture.js"; export * as THREE from "three";', resolveDir: path.join(__dirname, '../src/demo'), sourcefile: 'model-test-entry.js' }, bundle: true, platform: 'node', format: 'cjs', write: false });
->>>>>>> 15555fd (roof)
 const modelModule = new Module(__filename);
 modelModule.paths = module.paths;
 modelModule._compile(modelBundle.outputFiles[0].text, __filename);
@@ -196,10 +192,10 @@ test('catalogue and researched material prices are itemized and sum to the estim
   assert.match(unavailable.lines.find((line) => line.key === 'bricks').note, /variable or unavailable/);
 });
 
-test('flat roofs omit sloped-roof-only benchmark materials and missing price data fails explicitly', () => {
+test('legacy flat roofs omit sloped-roof-only benchmark materials and missing price data fails explicitly', () => {
   const benchmarks = JSON.parse(fs.readFileSync(path.join(__dirname, '../src/demo/material_price_benchmarks.json'), 'utf8'));
   const products = JSON.parse(fs.readFileSync(path.join(__dirname, '../../smart_house_products.json'), 'utf8'));
-  const flatHouse = createHouseConcept({ ...answers, style: 'Minimalist' });
+  const flatHouse = { ...createHouseConcept({ ...answers, style: 'Minimalist' }), roofDesign: 'stepped-flat' };
   const estimate = estimateHouseFromCatalogue(flatHouse, flatHouse.rate, products, benchmarks);
   assert.equal(estimate.lines.some((line) => ['roofSheets', 'roofTrusses'].includes(line.key)), false);
   assert.throws(() => estimateHouseFromCatalogue(flatHouse, flatHouse.rate, products), /benchmarks could not be read/);
