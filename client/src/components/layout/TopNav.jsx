@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { STRINGS } from '../../constants/strings';
 import { Icon } from '../ui/Icon';
 import { Button } from '../ui/Button';
+import { useState } from 'react';
 
 export const NAV_ITEMS = [
   { to: '/', label: 'My projects', shortLabel: 'Projects', icon: 'house', end: true },
@@ -13,10 +14,18 @@ export const NAV_ITEMS = [
 
 /** Persistent desktop navigation ("Where can I go?"). */
 export function TopNav({ onOpenHelp }) {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, cloudMode, logout } = useAuth();
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState('');
   const location = useLocation();
 
   const items = NAV_ITEMS.filter((i) => !i.adminOnly || isAdmin);
+  async function signOut() {
+    setLoggingOut(true); setLogoutError('');
+    try { await logout(); }
+    catch (e) { setLogoutError(e.message); }
+    finally { setLoggingOut(false); }
+  }
 
   return (
     <header className="topnav">
@@ -45,7 +54,9 @@ export function TopNav({ onOpenHelp }) {
               {STRINGS.app.help}
             </span>
           </Button>
-          <span className="badge badge--info">Local prototype</span>
+          <span className="badge badge--info">{cloudMode ? 'Cloud projects' : 'Local prototype'}</span>
+          {cloudMode && (user ? <Button variant="secondary" size="sm" loading={loggingOut} onClick={signOut}>{STRINGS.app.logout}</Button> : <>{location.pathname !== '/login' && <Button to="/login" variant="ghost" size="sm">Log in</Button>}{location.pathname !== '/register' && <Button to="/register" size="sm">Create account</Button>}</>)}
+          {logoutError && <span role="alert">{logoutError}</span>}
         </div>
       </div>
     </header>

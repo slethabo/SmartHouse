@@ -16,7 +16,10 @@
     "lint": "npm run lint --workspace server && npm run lint --workspace client",
     "dev:full": "concurrently -k -n server,client -c blue,green \"npm:dev --workspace server\" \"npm:dev --workspace client\"",
     "start:full": "npm run build && npm start --workspace server",
-    "test:prototype": "node --test client/tests/prototype.test.cjs"
+    "test:prototype": "node --test client/tests/prototype.test.cjs",
+    "test:supabase": "node --test client/tests/supabase.test.cjs",
+    "test:auth": "node --test client/tests/auth.test.cjs",
+    "check:supabase": "node supabase/check-connection.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

@@ -6,6 +6,7 @@ import { FormField } from '../components/ui/FormField';
 import { Icon } from '../components/ui/Icon';
 import { PrototypeConcept } from './PrototypeConcept';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { useAuth } from '../context/AuthContext';
 
 const DESCRIPTIONS = [
   'Start with the land. Its dimensions help shape what your home can become.',
@@ -30,6 +31,7 @@ function Notice({ children, type = 'error' }) {
 }
 
 export function ProjectsPage() {
+  const { cloudMode } = useAuth();
   useDocumentTitle('My projects');
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
@@ -61,7 +63,7 @@ export function ProjectsPage() {
     </section>
     {error && <><Notice>{error}</Notice><Button variant="secondary" onClick={() => setRetry((n) => n + 1)}>Try again</Button></>}
     <div className="studio-dashboard">
-      <section className="studio-panel studio-create"><span className="studio-eyebrow">START SOMETHING NEW</span><h2>Let us plan your home.</h2><p>A short consultation helps us understand what matters to you. You can save your progress at any time.</p><form onSubmit={create}><FormField label="Project name" placeholder="e.g. Our family home" value={title} onChange={(e) => setTitle(e.target.value)} required maxLength={120} /><Button type="submit" loading={busy} disabled={!title.trim()} icon="arrowRight" block>Start my consultation</Button></form><small><Icon name="info" size={14} /> No account needed. Projects are saved in this browser.</small></section>
+      <section className="studio-panel studio-create"><span className="studio-eyebrow">START SOMETHING NEW</span><h2>Let us plan your home.</h2><p>A short consultation helps us understand what matters to you. You can save your progress at any time.</p><form onSubmit={create}><FormField label="Project name" placeholder="e.g. Our family home" value={title} onChange={(e) => setTitle(e.target.value)} required maxLength={120} /><Button type="submit" loading={busy} disabled={!title.trim()} icon="arrowRight" block>Start my consultation</Button></form><small><Icon name="info" size={14} /> {cloudMode ? 'Projects and briefs are saved to your account. Log in on another device to continue.' : 'Local demo: projects are saved in this browser.'}</small></section>
       <section className="studio-projects"><div className="studio-section-title"><h2>Your projects</h2><span className="studio-count">{projects.length}</span></div>
         {loading ? <div className="studio-empty" role="status"><Icon name="refresh" size={28} /><p>Loading your projects...</p></div> : projects.length ? <div className="studio-project-list">{projects.map((p) => <Link className="studio-project" key={p.id} to={`/projects/${p.id}`}><span className="studio-project-icon"><Icon name="house" size={24} /></span><span><strong>{p.title}</strong><small>Created {new Date(p.created_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })} / Continue consultation</small></span><Icon name="arrowRight" /></Link>)}</div> : <div className="studio-empty"><Icon name="house" size={32} /><h3>Your next chapter starts here.</h3><p>Name your project to begin. Your saved consultations will appear here.</p></div>}
       </section>
@@ -70,6 +72,7 @@ export function ProjectsPage() {
 }
 
 export function ConsultationPage() {
+  const { cloudMode } = useAuth();
   useDocumentTitle('Architectural consultation');
   const { id } = useParams();
   const [params, setParams] = useSearchParams();
@@ -150,7 +153,7 @@ export function ConsultationPage() {
       {!review ? <div className="consultation-fields">{config.steps[step].questions.filter((q) => visible(q, answers)).map((q) => <div key={q.key} className={q.type === 'textarea' || q.type === 'multiselect' ? 'field-span' : ''}>{q.type === 'multiselect' ? <fieldset className="field consultation-checkbox-field" aria-describedby={`${q.key}-hint${fields[q.key] ? ` ${q.key}-error` : ''}`} aria-required={q.required || undefined}><legend className="field__label">{q.label}</legend><div className="field__hint" id={`${q.key}-hint`}>{q.hint}</div><div className="consultation-checkboxes">{q.options.map((option) => <label className="checkbox" key={option}><input type="checkbox" checked={(Array.isArray(answers[q.key]) ? answers[q.key] : []).includes(option)} onChange={(e) => { const selected = Array.isArray(answers[q.key]) ? answers[q.key] : []; change(q, e.target.checked ? [...selected, option] : selected.filter((item) => item !== option)); }} />{option}</label>)}</div>{fields[q.key] && <div className="field__error" id={`${q.key}-error`} role="alert">{fields[q.key]}</div>}</fieldset> : <FormField label={q.label} hint={q.hint} error={fields[q.key]} required={q.required} optional={!q.required} as={q.options ? 'select' : q.type === 'textarea' ? 'textarea' : 'input'} type={q.type === 'number' ? 'number' : 'text'} min={q.min} max={q.max} maxLength={q.type === 'number' ? undefined : 2000} rows={3} step={q.key === 'width' || q.key === 'length' ? 'any' : 1} value={answers[q.key] ?? ''} onChange={(e) => change(q, e.target.value)}>{q.options && <><option value="">Choose an option</option>{q.options.map((o) => <option key={o}>{o}</option>)}</>}</FormField>}</div>)}</div> : <><div className="brief-summary"><span><strong>{answers.width} x {answers.length} m</strong>Plot dimensions</span><span><strong>{answers.bedrooms} bed / {answers.bathrooms} bath</strong>Required rooms</span><span><strong>{Number(answers.budget || 0).toLocaleString('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 })}</strong>Budget</span><span><strong>{answers.style}</strong>Architectural style</span></div><div className="brief-review">{config.steps.map((s, i) => <details key={s.title}><summary>{s.title}<span>View answers</span></summary><Button size="sm" variant="ghost" onClick={() => setStep(i)}>Edit this section</Button><dl>{s.questions.filter((q) => visible(q, answers) && answers[q.key] !== undefined).map((q) => <div key={q.key}><dt>{q.label}</dt><dd>{Array.isArray(answers[q.key]) ? answers[q.key].join(', ') : answers[q.key]}</dd></div>)}</dl></details>)}</div><div className="consultation-assumptions"><h3>About your concept</h3><p>We currently support flat, rectangular plots and single-storey homes. Special access needs and future extensions are recorded for review. Layouts and costs are illustrative.</p></div><label className="consultation-ack"><input type="checkbox" checked={acknowledged} onChange={(e) => setAcknowledged(e.target.checked)} required /><span>These answers reflect my needs. I understand this is an early house concept.</span></label></>}
       <div className="consultation-actions"><Button variant="ghost" disabled={step === 0 || busy} icon="arrowLeft" onClick={() => setStep(step - 1)}>Back</Button><div><Button variant="secondary" disabled={busy} onClick={() => save()}>Save draft</Button><Button type="submit" loading={busy} icon="arrowRight">{review ? 'Create my concept' : 'Save & continue'}</Button></div></div>
     </form>
-    <div className="consultation-footnote"><Icon name="info" size={14} /> Saved on this device / Your answers can be revisited later.</div></div></div>}
+    <div className="consultation-footnote"><Icon name="info" size={14} /> {cloudMode ? 'Saved to your account / Log in to revisit your answers later.' : 'Saved on this device / Your answers can be revisited later.'}</div></div></div>}
     {mode === 'design' && brief && <div className="concept-anchor">{(dirty || brief.draft_revision !== revision) && <Notice type="info">This concept uses your last confirmed brief. Edit and confirm your brief to update it.</Notice>}<PrototypeConcept brief={brief} /></div>}
   </div>;
 }

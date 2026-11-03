@@ -53,6 +53,13 @@ test('storage failures are visible rather than reporting false saves', async () 
   await assert.rejects(request('/projects', { method: 'POST', body: { title: 'Demo' } }), /could not save/);
 });
 
+test('account-scoped local favourites stay separate from another account and the offline demo', async () => {
+  await request('/plans/1/save', { method: 'POST', storageKey: 'account-a' });
+  assert.equal((await request('/plans/saved', { storageKey: 'account-a' })).data.items.length, 1);
+  assert.equal((await request('/plans/saved', { storageKey: 'account-b' })).data.items.length, 0);
+  assert.equal((await request('/plans/saved')).data.items.length, 0);
+});
+
 test('supported room counts produce non-overlapping rooms with direct circulation', () => {
   for (let bedrooms = 1; bedrooms <= 6; bedrooms++) {
     for (let bathrooms = 1; bathrooms <= 4; bathrooms++) {

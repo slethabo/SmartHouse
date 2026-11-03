@@ -97,6 +97,20 @@
 .topnav__help-text {
   display: none;
 }
+@media (max-width: 767px) {
+  .topnav__inner {
+    height: auto;
+    min-height: var(--nav-height);
+    padding: var(--space-2) var(--space-4);
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .topnav__brand { white-space: nowrap; }
+  .topnav__brand svg { flex-shrink: 0; }
+  .topnav__spacer { display: none; }
+  .topnav__actions { margin-left: auto; flex-wrap: wrap; justify-content: flex-end; max-width: 100%; }
+  .topnav__actions > .badge { display: none; }
+}
 @media (min-width: 768px) {
   .topnav__help-text {
     display: inline;

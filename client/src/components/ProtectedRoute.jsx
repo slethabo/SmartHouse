@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LoadingBlock } from './ui/Spinner';
+import { safeReturnPath } from '../services/supabaseAuth';
 
 /**
  * Guards routes. Waits for the session to hydrate, then redirects guests to
@@ -19,7 +20,8 @@ export function ProtectedRoute({ adminOnly = false }) {
 /** Redirects logged-in users away from login/register. */
 export function GuestRoute() {
   const { user, ready } = useAuth();
+  const location = useLocation();
   if (!ready) return <LoadingBlock />;
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to={safeReturnPath(location.state?.from)} replace />;
   return <Outlet />;
 }

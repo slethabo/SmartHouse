@@ -77,9 +77,26 @@ in `generation_runs.configuration`, and unsupported needs in the specification.
 
 ## Frontend operation contract
 
-The current React application still uses localStorage. Creating these tables does
-**not** connect it to Supabase or import local/legacy records. Auth and the service
-adapter must be implemented next; legacy numeric IDs are not Supabase UUIDs.
+The React service adapter now stores projects, consultation drafts and confirmed
+briefs here when the root `.env` selects Supabase. Configure `VITE_SUPABASE_URL` and
+`VITE_SUPABASE_PUBLISHABLE_KEY` (legacy `VITE_SUPABASE_ANON_KEY` also works), then
+restart Vite. Enable the Email provider and configure `/auth/callback` and
+`/auth/reset` redirect URLs for your app origin. Registration, login, email
+confirmation, password reset and logout now use Supabase Auth. The existing
+authenticated RLS policies enforce project ownership. Sessions restore and refresh
+automatically; no anonymous identities are created. Existing anonymous workspaces
+can link an email through registration, then set a password after confirmation
+(enable manual identity linking for this conversion).
+
+Run `npm run check:supabase` for a hosted Auth connection/settings check. To also
+check account/table access, configure an existing confirmed test account using
+`SUPABASE_TEST_EMAIL` and `SUPABASE_TEST_PASSWORD` in the ignored root `.env`.
+The checker creates no accounts or project records. `my_role()` supplies the UI
+administrator role; display-name metadata cannot grant administrative privileges.
+The local design library, favourites, demo management and visual concept generation
+remain in the browser. No local/legacy data is automatically imported: numeric IDs
+are not Supabase UUIDs. Generated geometry, estimates and assets still require the
+trusted backend below. Browser-generated previews are not stored snapshots.
 
 Use the Supabase client with the publishable key and a signed-in session:
 

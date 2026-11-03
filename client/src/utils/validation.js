@@ -38,6 +38,7 @@ export function validateRegister({ fullName, email, password, confirmPassword })
   const errors = {};
   if (!fullName || !fullName.trim()) errors.fullName = e.fullNameRequired;
   else if (fullName.trim().length < 2) errors.fullName = e.fullNameShort;
+  else if (fullName.trim().length > 120) errors.fullName = 'Keep your name under 120 characters.';
   const emailErr = validateEmail(email);
   if (emailErr) errors.email = emailErr;
   const passErr = validatePassword(password);

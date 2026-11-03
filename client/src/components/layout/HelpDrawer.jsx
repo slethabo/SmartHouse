@@ -5,9 +5,11 @@ import { Icon } from '../ui/Icon';
 import { useFetch } from '../../hooks/useFetch';
 import { plansService } from '../../services/plans.service';
 import { formatRand } from '../../utils/format';
+import { useAuth } from '../../context/AuthContext';
 
 /** "How it works" help facility, available on every page. */
 export function HelpDrawer({ open, onClose }) {
+  const { cloudMode } = useAuth();
   const closeRef = useRef(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -36,7 +38,7 @@ export function HelpDrawer({ open, onClose }) {
         <section><h3>Start with your story</h3><p>Create a project, then answer questions about your plot, budget, household, and daily routines.</p></section>
         <section><h3>Save and refine</h3><p>Save each step as you go. Review your answers, confirm the brief, and explore a room concept with illustrative costs.</p></section>
         <section><h3>Understand the preview</h3><p>The floor plan and house exterior use the same footprint. Show cutaway to inspect the room arrangement. These are concept previews; detailed architectural and construction checks are still to come.</p></section>
-        <section><h3>Saved on your device</h3><p>No account is needed. Projects stay in this browser. No backend or database is needed. The design library contains earlier reference houses.</p></section>
+        <section><h3>{cloudMode ? 'Your cloud workspace' : 'Saved on your device'}</h3><p>{cloudMode ? 'Projects, draft answers, and confirmed briefs are saved to your account. Log in with your email and password to continue on another device. The reference design library, its saved favourites, and demo rate controls remain in this browser. Concept previews and downloads are generated in your browser.' : 'No account is needed. Projects stay in this browser. No backend or database is needed. The design library contains earlier reference houses.'}</p></section>
         {rates?.items?.length > 0 && (
           <section>
             <h3>{STRINGS.help.currentRates}</h3>

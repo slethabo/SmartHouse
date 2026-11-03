@@ -42,9 +42,9 @@ export const STRINGS = {
 
   auth: {
     loginTitle: 'Log in',
-    loginIntro: 'Welcome back. Log in to see your recommendations and saved plans.',
+    loginIntro: 'Welcome back. Log in to continue your house projects and saved consultations.',
     registerTitle: 'Create your account',
-    registerIntro: 'It takes less than a minute. Then enter your plot and budget to get recommendations.',
+    registerIntro: 'Create an account to save your house projects and return to them on another device.',
     fullName: 'Full name',
     fullNamePlaceholder: 'e.g. Thandi Mokoena',
     email: 'Email address',

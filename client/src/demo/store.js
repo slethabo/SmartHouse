@@ -2,6 +2,7 @@ import catalogue from './plans.json';
 import questionnaire from './consultation.json';
 import { estimateAllLevels } from './estimator';
 import { recommend } from './engine';
+import { validateAnswers as validate } from './validation';
 
 const STORAGE_KEY = 'smarthouse.frontend-prototype.v1';
 const now = () => new Date().toISOString();
@@ -11,37 +12,23 @@ function fail(message, status = 400, fields = {}) {
   error.status = status; error.fields = fields;
   throw error;
 }
-function load() {
-  const raw = localStorage.getItem(STORAGE_KEY);
+function load(storageKey = STORAGE_KEY) {
+  const raw = localStorage.getItem(storageKey);
   if (raw) {
     try { return JSON.parse(raw); }
     catch { fail('Saved demo data could not be read. Your browser data has not been overwritten.'); }
   }
   return { projects: [], plans: structuredClone(catalogue), saved: [], rates: { basic: 9500, standard: 12500, premium: 17000 }, lastSearch: null };
 }
-function persist(state) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function persist(state, storageKey = STORAGE_KEY) {
+  try { localStorage.setItem(storageKey, JSON.stringify(state)); }
   catch { fail('Your browser could not save this project. Check browser storage permissions or available space.'); }
-}
-function validate(answers, complete = false) {
-  const errors = {};
-  for (const q of questionnaire.steps.flatMap((s) => s.questions)) {
-    if (q.when && answers[q.when.key] !== q.when.value) continue;
-    const value = answers[q.key];
-    if (value === undefined || value === '' || (Array.isArray(value) && value.length === 0)) { if (complete && q.required) errors[q.key] = 'Please answer this question.'; continue; }
-    if (q.type === 'number' && (!Number.isFinite(value) || value < q.min || value > q.max || (!['width', 'length'].includes(q.key) && !Number.isInteger(value)))) errors[q.key] = `Enter a number from ${q.min} to ${q.max}.`;
-    if (q.type === 'multiselect' && (!Array.isArray(value) || value.some((option) => !q.options.includes(option)))) errors[q.key] = 'Choose available options.';
-    else if (q.options && q.type !== 'multiselect' && !q.options.includes(value)) errors[q.key] = 'Choose an available option.';
-    if (typeof value === 'string' && value.length > 2000) errors[q.key] = 'Keep this answer under 2,000 characters.';
-  }
-  if (Object.keys(errors).length) fail('Please check the highlighted answers.', 400, errors);
-  if (complete && (answers.shape !== 'Rectangular' || answers.terrain === 'Sloped')) fail('For this prototype, choose a rectangular, flat plot. You can still save your draft.');
 }
 
 /** Local demo operations only. No network, API server, or database is used. */
-export async function prototypeRequest(path, { method = 'GET', body, query = {}, signal } = {}) {
+export async function prototypeRequest(path, { method = 'GET', body, query = {}, signal, storageKey = STORAGE_KEY } = {}) {
   if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
-  const state = load();
+  const state = load(storageKey);
   let data;
   let message = 'OK';
   let changed = false;
@@ -109,6 +96,6 @@ export async function prototypeRequest(path, { method = 'GET', body, query = {},
   } else if (path === '/admin/stats') data = { users: 0, plans: state.plans.length, active_plans: state.plans.filter((p) => p.is_active).length, searches: state.lastSearch ? 1 : 0 };
   else if (path === '/admin/users') data = { items: [] };
   else fail('This action is not part of the frontend prototype.', 404);
-  if (changed) persist(state);
+  if (changed) persist(state, storageKey);
   return { data: structuredClone(data), message };
 }

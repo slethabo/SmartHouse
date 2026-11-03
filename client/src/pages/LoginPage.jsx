@@ -3,16 +3,13 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { STRINGS } from '../constants/strings';
-import { validateLogin } from '../utils/validation';
+import { validateEmail, validateLogin } from '../utils/validation';
 import { FormField, PasswordField } from '../components/ui/FormField';
 import { Button } from '../components/ui/Button';
 import { Banner } from '../components/ui/Banner';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
-
-const DEMO = [
-  { label: 'Client', email: 'client@smarthouse.test', password: 'Client123!' },
-  { label: 'Admin', email: 'admin@smarthouse.test', password: 'Admin123!' },
-];
+import { safeReturnPath } from '../services/supabaseAuth';
+import { authService } from '../services/auth.service';
 
 export function LoginPage() {
   useDocumentTitle(STRINGS.auth.loginTitle);
@@ -24,6 +21,16 @@ export function LoginPage() {
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [notice, setNotice] = useState('');
+  async function resend() {
+    setServerError(''); setNotice('');
+    const invalid = validateEmail(form.email);
+    if (invalid) { setErrors({ email: invalid }); return; }
+    setSubmitting(true);
+    try { setNotice(await authService.resendConfirmation(form.email)); }
+    catch (e) { setServerError(e.message); }
+    finally { setSubmitting(false); }
+  }
 
   const update = (field) => (e) => {
     setForm((f) => ({ ...f, [field]: e.target.value }));
@@ -40,7 +47,7 @@ export function LoginPage() {
     try {
       const message = await login({ email: form.email.trim(), password: form.password });
       toast.success(message);
-      navigate(location.state?.from || '/', { replace: true });
+      navigate(safeReturnPath(location.state?.from), { replace: true });
     } catch (err) {
       setServerError(err.message);
       setErrors(err.fields || {});
@@ -55,6 +62,8 @@ export function LoginPage() {
         <h1>{STRINGS.auth.loginTitle}</h1>
         <p>{STRINGS.auth.loginIntro}</p>
         {serverError && <Banner type="error">{serverError}</Banner>}
+        {notice && <Banner type="success">{notice}</Banner>}
+        {location.state?.message && <Banner type="success">{location.state.message}</Banner>}
         <form className="form mt-4" onSubmit={handleSubmit} noValidate>
           <FormField
             label={STRINGS.auth.email}
@@ -78,21 +87,11 @@ export function LoginPage() {
             {submitting ? STRINGS.auth.loggingIn : STRINGS.auth.loginButton}
           </Button>
         </form>
+        <p><Link to="/forgot-password">Forgot your password?</Link></p>
+        <Button variant="ghost" size="sm" disabled={submitting} onClick={resend}>Resend confirmation email</Button>
         <p className="auth-switch">
           {STRINGS.auth.noAccount} <Link to="/register">{STRINGS.nav.register}</Link>
         </p>
-        <div className="demo-creds">
-          <strong>{STRINGS.auth.demoTitle}:</strong>{' '}
-          {DEMO.map((d, i) => (
-            <span key={d.email}>
-              {i > 0 && ' · '}
-              {d.label}: {d.email}{' '}
-              <button type="button" onClick={() => setForm({ email: d.email, password: d.password })}>
-                {STRINGS.auth.useDemo}
-              </button>
-            </span>
-          ))}
-        </div>
       </div>
     </div>
   );

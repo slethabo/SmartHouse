@@ -10,6 +10,10 @@ import { SavedPlansPage } from './pages/SavedPlansPage';
 import { AdminPage } from './pages/admin/AdminPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ProjectsPage, ConsultationPage } from './pages/ProjectsPage';
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { ProtectedRoute, GuestRoute } from './components/ProtectedRoute';
+import { AuthCallbackPage, ForgotPasswordPage, ResetPasswordPage } from './pages/AccountPages';
 
 export default function App() {
   return (
@@ -18,21 +22,29 @@ export default function App() {
         <AuthProvider>
           <Routes>
             <Route element={<AppLayout />}>
-              <Route path="/login" element={<Navigate to="/" replace />} />
-              <Route path="/register" element={<Navigate to="/" replace />} />
+              <Route element={<GuestRoute />}>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+              </Route>
+              <Route path="/auth/callback" element={<AuthCallbackPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/auth/reset" element={<ResetPasswordPage />} />
 
-              {/* All prototype screens use the shared workspace. */}
               <Route path="/browse" element={<BrowsePage />} />
               <Route path="/plans/:id" element={<PlanDetailPage />} />
 
+              <Route element={<ProtectedRoute />}>
               <Route path="/" element={<ProjectsPage />} />
               <Route path="/catalogue-search" element={<DashboardPage />} />
               <Route path="/projects" element={<ProjectsPage />} />
               <Route path="/projects/:id" element={<ConsultationPage />} />
               <Route path="/recommendations" element={<RecommendationsPage />} />
               <Route path="/saved" element={<SavedPlansPage />} />
+              </Route>
 
+              <Route element={<ProtectedRoute adminOnly />}>
               <Route path="/admin" element={<AdminPage />} />
+              </Route>
 
               <Route path="/home" element={<Navigate to="/" replace />} />
               <Route path="*" element={<NotFoundPage />} />

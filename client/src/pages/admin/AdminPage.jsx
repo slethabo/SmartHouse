@@ -6,10 +6,13 @@ import { adminService } from '../../services/admin.service';
 import { AdminPlans } from './AdminPlans';
 import { AdminUsers } from './AdminUsers';
 import { AdminRates } from './AdminRates';
+import { useAuth } from '../../context/AuthContext';
+import { Banner } from '../../components/ui/Banner';
 
 const TABS = ['plans', 'users', 'rates'];
 
 export function AdminPage() {
+  const { cloudMode } = useAuth();
   const [params, setParams] = useSearchParams();
   const tab = TABS.includes(params.get('tab')) ? params.get('tab') : 'plans';
   const { data: stats, reload: reloadStats } = useFetch(({ signal }) => adminService.stats({ signal }), []);
@@ -17,6 +20,7 @@ export function AdminPage() {
   return (
     <>
       <PageHeader title={STRINGS.admin.title} intro={STRINGS.admin.intro} />
+      {cloudMode && <Banner>These demo controls manage the reference design library and rates stored in this browser.</Banner>}
 
       {stats && (
         <div className="admin-stats" aria-label="Overview">
