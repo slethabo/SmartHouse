@@ -1,4 +1,27 @@
+import { placeFurniture } from './furniture';
+
 const EPS=.001,round=n=>+n.toFixed(4);
+const LEAF=.8,JAMB=.15;
+/** Higher ranks receive the door swing: a bathroom door opens into the bathroom, never into the hall. */
+const SWING_RANK={hall:0,living:1,kitchen:1,dining:1,entertainment:1,garage:2,bedroom:3,office:3,utility:3,dressing:4,bathroom:5};
+
+const overlap=(a,b)=>Math.max(0,Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x))*Math.max(0,Math.min(a.y+a.d,b.y+b.d)-Math.max(a.y,b.y));
+
+/** Places a hinged leaf on a wall span. Tries both corners, then the centre, and keeps the
+ * position whose quarter-circle swing clashes least with furniture and earlier doors in the room.
+ * `hinge` is the end of the opening the leaf hangs from; `swing` is +1/-1 along the wall normal. */
+function placeLeaf(axis,x,y,span,swing,obstacles=[],leaf=LEAF){
+  const options=[[JAMB,'start'],[span-JAMB-leaf,'end'],[(span-leaf)/2,'start']];
+  let best;
+  for(const [offset,hinge] of options){
+    const along=(axis==='x'?x:y)+offset,across=axis==='x'?y:x;
+    const sweep=axis==='x'?{x:along,y:swing>0?across:across-leaf,w:leaf,d:leaf}:{x:swing>0?across:across-leaf,y:along,w:leaf,d:leaf};
+    const clash=obstacles.reduce((sum,o)=>sum+overlap(sweep,o),0);
+    if(!best||clash<best.clash-EPS)best={clash,offset,hinge,sweep};
+  }
+  obstacles.push(best.sweep);
+  return {axis,x:round(x+(axis==='x'?best.offset:0)),y:round(y+(axis==='y'?best.offset:0)),length:round(leaf),hinge:best.hinge,swing};
+}
 
 /** Exact union boundary of the occupied room rectangles, including setbacks and courtyards. */
 export function roomBoundaries(rooms) {
@@ -38,11 +61,20 @@ export function connectRooms({rooms},entranceRoomId) {
         priority:a.type==='hall'||b.type==='hall'?0:pub.includes(a.type)||pub.includes(b.type)?1:2});}
   }
   const parent=new Map(rooms.map(r=>[r.id,r.id])),find=id=>parent.get(id)===id?id:find(parent.get(id)),doors=[];
+  // Swing areas already claimed in each room, so leaves avoid furniture and each other.
+  const claimed=new Map(rooms.map(r=>[r.id,placeFurniture(r).map(f=>({x:f.x,y:f.y,w:f.width,d:f.depth}))]));
   for(const e of edges.sort((a,b)=>a.priority-b.priority)){
     if(find(e.a.id)===find(e.b.id))continue;parent.set(find(e.a.id),find(e.b.id));
-    const size=e.open?Math.min(2.8,e.span-.25):.9,offset=(e.span-size)/2;
-    doors.push({axis:e.axis,x:round(e.x+(e.axis==='x'?offset:0)),y:round(e.y+(e.axis==='y'?offset:0)),length:round(size),
-      side:e.axis==='y'&&e.a.type==='hall'?'right':'left',opening:e.open,connects:[e.a.id,e.b.id]});
+    if(e.open){
+      const size=Math.min(2.8,e.span-.25),offset=(e.span-size)/2;
+      doors.push({axis:e.axis,x:round(e.x+(e.axis==='x'?offset:0)),y:round(e.y+(e.axis==='y'?offset:0)),length:round(size),
+        opening:true,connects:[e.a.id,e.b.id]});
+      continue;
+    }
+    // Hinged doors open into the more private room, hinged beside a corner where possible.
+    const into=(SWING_RANK[e.b.type]??1)>(SWING_RANK[e.a.type]??1)?e.b:e.a;
+    const swing=e.axis==='x'?(into.y>=e.y-EPS?1:-1):(into.x>=e.x-EPS?1:-1);
+    doors.push({...placeLeaf(e.axis,e.x,e.y,e.span,swing,claimed.get(into.id)),swingInto:into.id,opening:false,connects:[e.a.id,e.b.id]});
   }
   if(new Set(rooms.map(r=>find(r.id))).size!==1)throw new Error('A source-plan room has no circulation connection.');
   const exterior=walls.filter(w=>w.exterior);
@@ -50,9 +82,15 @@ export function connectRooms({rooms},entranceRoomId) {
     const candidates=exterior.filter(w=>w.roomId===r.id&&w.length>(garage?2:1.1)).sort((a,b)=>
       (a.edge==='front'?-100:0)-(b.edge==='front'?-100:0)||b.length-a.length);
     const w=candidates[0];if(!w)throw new Error(`${r.name} has no exterior entrance.`);
-    const size=garage?Math.min(4.8,w.length-.6):1,offset=(w.length-size)/2;
+    if(!garage){
+      // Front doors swing inwards, away from the weather.
+      const swing=w.edge==='front'||w.edge==='left'?1:-1;
+      doors.push({...placeLeaf(w.axis,w.x,w.y,w.length,swing,claimed.get(r.id),.9),swingInto:r.id,edge:w.edge,entrance:true,garage:false,connects:['outside',r.id]});
+      return;
+    }
+    const size=Math.min(4.8,w.length-.6),offset=(w.length-size)/2;
     doors.push({axis:w.axis,x:round(w.x+(w.axis==='x'?offset:0)),y:round(w.y+(w.axis==='y'?offset:0)),length:round(size),
-      edge:w.edge,entrance:!garage,garage,connects:['outside',r.id]});
+      edge:w.edge,entrance:false,garage:true,connects:['outside',r.id]});
   };
   opening(rooms.find(r=>r.id===entranceRoomId));
   rooms.filter(r=>r.type==='garage').forEach(r=>opening(r,true));

@@ -1,6 +1,48 @@
 # Frontend Prototype Progress
 
-## Latest: dataset-derived layout families
+## Latest: architectural floor-plan symbols
+
+*Author: Lethabo Sangweni (November 2026)*
+
+The generated floor plan now follows standard architectural drawing conventions
+instead of painting doors and windows over continuous wall lines.
+
+- **Walls** are drawn as solid pieces with real gaps cut at every door and window.
+  Wall ends meeting other walls are extended so corners close cleanly. Exterior walls
+  (0.22 m) are drawn thicker than interior walls (0.11 m).
+- **Hinged doors** are shown fully open at 90 degrees with a quarter-circle swing
+  back to the far jamb. A door opens into the more private room (bathroom > walk-in
+  wardrobe > bedroom/office/utility > garage > living spaces > halls). It hangs
+  0.15 m from a corner where possible. The generator tries both corners and then the
+  centre of the shared wall, keeping the position whose swing least overlaps
+  furniture and earlier door swings in that room.
+- **Front doors** swing inwards; the gold entrance marker sits outside the door.
+- **Open connections** (for example living room to hall) are drawn as archways:
+  a wall gap with dashed lines across both wall faces. Previously, openings on
+  vertical walls incorrectly showed an oversized door leaf and arc.
+- **Windows** are framed openings within the wall thickness with glazing lines.
+- **Garage doors** are a dashed line across the opening.
+- Horizontal halls keep their label horizontal (the bedroom lobby label was
+  previously rotated and clipped), and dashed "requested addition" outlines sit
+  inside the walls instead of on them.
+
+Door data keeps its existing `axis`, `x`, `y`, `length` and `connects` fields, so
+the 3D model and estimator are unchanged. Hinged doors and entrances also carry
+`hinge` (`start` or `end`), `swing` (+1/-1 along the wall normal) and `swingInto`
+(room id). Placement lives in `client/src/demo/templateGeometry.js` and drawing in
+`client/src/components/plans/ConceptDrawings.jsx`. Concepts are regenerated from the
+confirmed brief, so existing projects show the new drawing without migration.
+
+This revision also removed merge-conflict markers left by the roof commit in
+`client/tests/prototype.test.cjs` and `client/src/pages/HouseConceptPage.jsx`,
+which had stopped the prototype tests and page from running. With these changes,
+`npm run test:prototype` passes 26 tests. Two estimator pricing tests fail for
+reasons unrelated to this work.
+
+Known limitation: in very small rooms a door leaf can still sit close to a fitting
+(for example the toilet in a compact second bathroom).
+
+## Dataset-derived layout families
 
 The generator now adapts three visually reviewed source plans (649, 1115 and 979)
 from the supplied training dataset. Consultation adds optional room-size profiles,

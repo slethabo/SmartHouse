@@ -10,12 +10,72 @@ function Furniture({ room }) {
   </g>)}</g>;
 }
 
-function Door({ door: d }) {
-  const colour = '#475b4b';
-  if (d.garage) return <path d={`M${d.x} ${d.y}${d.axis==='x'?'h':'v'}${d.length}`} stroke="#52675e" strokeWidth=".1" />;
-  if (d.axis === 'x') return <g><path d={`M${d.x} ${d.y}h${d.length}`} stroke="#f9f8f2" strokeWidth=".24" />{!d.opening && <><path d={`M${d.x} ${d.y}v${d.length}`} stroke={colour} strokeWidth=".045" /><path d={`M${d.x + d.length} ${d.y}A${d.length} ${d.length} 0 0 1 ${d.x} ${d.y + d.length}`} fill="none" stroke={colour} strokeWidth=".025" /></>}</g>;
-  const dx = d.side === 'left' ? -d.length : d.length;
-  return <g><path d={`M${d.x} ${d.y}v${d.length}`} stroke="#f9f8f2" strokeWidth=".24" /><path d={`M${d.x} ${d.y}h${dx}`} stroke={colour} strokeWidth=".045" /><path d={`M${d.x} ${d.y + d.length}A${d.length} ${d.length} 0 0 ${d.side === 'left' ? 1 : 0} ${d.x + dx} ${d.y}`} fill="none" stroke={colour} strokeWidth=".025" /></g>;
+const WALL = { exterior: .22, interior: .11 }, INK = '#2f4337';
+const thickness = (w) => (w.exterior ? WALL.exterior : WALL.interior);
+const lineOf = (o) => (o.axis === 'x' ? o.y : o.x), startOf = (o) => (o.axis === 'x' ? o.x : o.y);
+const onLine = (o, w) => o.axis === w.axis && Math.abs(lineOf(o) - lineOf(w)) < .001;
+
+/** Wall runs with real gaps for every door and window; ends that meet other walls extend to close the corner. */
+function wallPieces(walls, openings) {
+  const pieces = [];
+  for (const w of walls) {
+    const t = thickness(w), a = startOf(w), b = a + w.length;
+    const gaps = openings.filter((o) => onLine(o, w)).map((o) => [startOf(o), startOf(o) + o.length]).sort((p, q) => p[0] - q[0]);
+    let cursor = a, capStart = true;
+    const push = (s, e, capS, capE) => {
+      // A cap must never reach into a neighbouring opening on the same line.
+      let s2 = capS ? s - t / 2 : s, e2 = capE ? e + t / 2 : e;
+      for (const [gs, ge] of gaps) { if (ge <= s + .001 && ge > s2) s2 = ge; if (gs >= e - .001 && gs < e2) e2 = gs; }
+      if (e2 - s2 > .001) pieces.push({ w, t, s: s2, e: e2 });
+    };
+    for (const [gs, ge] of gaps) {
+      if (ge <= cursor || gs >= b) continue;
+      if (gs > cursor) push(cursor, gs, capStart, false);
+      cursor = Math.max(cursor, ge); capStart = false;
+    }
+    if (cursor < b) push(cursor, b, capStart, true);
+  }
+  return pieces;
+}
+
+const toXY = (axis, along, across) => (axis === 'x' ? [along, across] : [across, along]);
+const openingThickness = (walls, o) => {
+  const w = walls.find((wall) => onLine(o, wall) && startOf(o) < startOf(wall) + wall.length - .001 && startOf(o) + o.length > startOf(wall) + .001);
+  return w ? thickness(w) : WALL.interior;
+};
+
+function Door({ door: d, t }) {
+  const a = startOf(d), c = lineOf(d), L = d.length;
+  if (d.opening) {
+    // Archway: dashed lines across the wall faces.
+    return <g stroke={INK} strokeWidth=".02" strokeDasharray=".08 .06">{[-t / 2, t / 2].map((k) => {
+      const [x1, y1] = toXY(d.axis, a, c + k), [x2, y2] = toXY(d.axis, a + L, c + k);
+      return <line key={k} x1={x1} y1={y1} x2={x2} y2={y2} />;
+    })}</g>;
+  }
+  if (d.garage) {
+    const [x1, y1] = toXY(d.axis, a, c), [x2, y2] = toXY(d.axis, a + L, c);
+    return <g stroke={INK}><line x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth=".05" strokeDasharray=".22 .12" /></g>;
+  }
+  // Hinged leaf, drawn fully open at 90 degrees, with its quarter-circle swing back to the far jamb.
+  const hingeAt = d.hinge === 'end' ? a + L : a, farJamb = d.hinge === 'end' ? a : a + L;
+  const face = c + d.swing * t / 2;
+  const [hx, hy] = toXY(d.axis, hingeAt, face), [tx, ty] = toXY(d.axis, hingeAt, face + d.swing * L), [jx, jy] = toXY(d.axis, farJamb, face);
+  const n = toXY(d.axis, 0, d.swing), u = toXY(d.axis, farJamb - hingeAt, 0);
+  const sweep = n[0] * u[1] - n[1] * u[0] > 0 ? 1 : 0;
+  return <g stroke={INK} fill="none">
+    <line x1={hx} y1={hy} x2={tx} y2={ty} strokeWidth=".05" strokeLinecap="square" />
+    <path d={`M${tx} ${ty}A${L} ${L} 0 0 ${sweep} ${jx} ${jy}`} strokeWidth=".018" />
+  </g>;
+}
+
+function Window({ window: w, t }) {
+  const a = startOf(w), c = lineOf(w), L = w.length;
+  const [x, y] = toXY(w.axis, a, c - t / 2), size = toXY(w.axis, L, t);
+  return <g>
+    <rect x={x} y={y} width={size[0]} height={size[1]} fill="#eef6f8" stroke={INK} strokeWidth=".02" />
+    {[-.025, .025].map((k) => { const [x1, y1] = toXY(w.axis, a, c + k), [x2, y2] = toXY(w.axis, a + L, c + k); return <line key={k} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#5e93a4" strokeWidth=".018" />; })}
+  </g>;
 }
 
 export function FloorPlan({ house: h }) {
@@ -28,13 +88,13 @@ export function FloorPlan({ house: h }) {
     <defs><pattern id={tileId} width=".35" height=".35" patternUnits="userSpaceOnUse"><path d="M.35 0H0V.35" fill="none" stroke="#bacfd6" strokeWidth=".015" /></pattern></defs>
     <path d={`M0 -.8H${h.width} M0 -1v.4 M${h.width} -1v.4`} stroke="#98a48f" strokeWidth=".03" /><text x={h.width/2} y="-1" textAnchor="middle" fontSize=".28" fill="#52674d">{h.width.toFixed(1)} m</text>
     {(h.terraces||[]).map((t,i)=><g key={`terrace-${i}`}><rect x={t.x} y={t.y} width={t.width} height={t.depth} fill="#e1d8c6" stroke="#a89e87" strokeWidth=".04" /><text x={t.x+t.width/2} y={t.y+t.depth/2} fontSize=".2" textAnchor="middle" fill="#786d58">{t.name}</text></g>)}
-    {h.rooms.map((r)=><g key={r.id}><rect x={r.x} y={r.y} width={r.width} height={r.depth} fill={colours[r.type]} />{r.type==='bathroom'&&<rect x={r.x} y={r.y} width={r.width} height={r.depth} fill={`url(#${tileId})`} />}<Furniture room={r} />{r.addition&&<rect x={r.x+.08} y={r.y+.08} width={r.width-.16} height={r.depth-.16} fill="none" stroke="#b9975e" strokeWidth=".035" strokeDasharray=".15 .1" />}
-      {r.type==='hall'?<text x={r.x+r.width/2} y={r.y+r.depth/2} textAnchor="middle" fontSize=".23" fill="#657457" transform={`rotate(-90 ${r.x+r.width/2} ${r.y+r.depth/2})`}>{r.name.toUpperCase()} / {r.width.toFixed(1)} m</text>:<><text x={r.x+r.width/2} y={r.y+.4} textAnchor="middle" fontSize={Math.min(.29,r.width/(r.name.length*.65))} fontWeight="600" fill="#2c4034">{r.name}</text><text x={r.x+r.width/2} y={r.y+.73} textAnchor="middle" fontSize=".22" fill="#677263">{r.width.toFixed(1)} x {r.depth.toFixed(1)} m</text></>}
+    {h.rooms.map((r)=><g key={r.id}><rect x={r.x} y={r.y} width={r.width} height={r.depth} fill={colours[r.type]} />{r.type==='bathroom'&&<rect x={r.x} y={r.y} width={r.width} height={r.depth} fill={`url(#${tileId})`} />}<Furniture room={r} />{r.addition&&<rect x={r.x+.16} y={r.y+.16} width={r.width-.32} height={r.depth-.32} fill="none" stroke="#b9975e" strokeWidth=".035" strokeDasharray=".15 .1" />}
+      {r.type==='hall'?<text x={r.x+r.width/2} y={r.y+r.depth/2} textAnchor="middle" fontSize=".23" fill="#657457" transform={r.depth>r.width?`rotate(-90 ${r.x+r.width/2} ${r.y+r.depth/2})`:undefined}>{r.name.toUpperCase()} / {Math.min(r.width,r.depth).toFixed(1)} m</text>:<><text x={r.x+r.width/2} y={r.y+.4} textAnchor="middle" fontSize={Math.min(.29,r.width/(r.name.length*.65))} fontWeight="600" fill="#2c4034">{r.name}</text><text x={r.x+r.width/2} y={r.y+.73} textAnchor="middle" fontSize=".22" fill="#677263">{r.width.toFixed(1)} x {r.depth.toFixed(1)} m</text></>}
     </g>)}
-    {h.walls.map((w,i)=><path key={i} d={`M${w.x} ${w.y}${w.axis==='x'?'h':'v'}${w.length}`} stroke="#334a3c" strokeWidth={w.exterior?.18:.12} />)}
-    {h.doors.map((d,i)=><Door key={i} door={d} />)}
-    {h.windows.map((w,i)=><g key={i} stroke="#5e93a4" strokeWidth=".055"><path d={w.axis==='x'?`M${w.x} ${w.y}h${w.length}`:`M${w.x} ${w.y}v${w.length}`} stroke="#edf8fa" strokeWidth=".2" /><path d={w.axis==='x'?`M${w.x} ${w.y-.06}h${w.length}m-${w.length} .12h${w.length}`:`M${w.x-.06} ${w.y}v${w.length}m.12 -${w.length}v${w.length}`} /></g>)}
-    <circle cx={entrance.x+(entrance.axis==='x'?entrance.length/2:0)} cy={entrance.y+(entrance.axis==='y'?entrance.length/2:0)} r=".16" fill="#d1a55d" stroke="#fff" strokeWidth=".04" />
+    {wallPieces(h.walls,[...h.doors,...h.windows]).map(({w,t,s,e},i)=>{const [x,y]=toXY(w.axis,s,lineOf(w)-t/2),[width,height]=toXY(w.axis,e-s,t);return <rect key={i} x={x} y={y} width={width} height={height} fill={INK} />;})}
+    {h.doors.map((d,i)=><Door key={i} door={d} t={openingThickness(h.walls,d)} />)}
+    {h.windows.map((w,i)=><Window key={i} window={w} t={openingThickness(h.walls,w)} />)}
+    <circle {...(()=>{const [cx,cy]=toXY(entrance.axis,startOf(entrance)+entrance.length/2,lineOf(entrance)-entrance.swing*.45);return {cx,cy};})()} r=".14" fill="#d1a55d" stroke="#fff" strokeWidth=".04" />
     <text x={h.width/2} y="-1.4" textAnchor="middle" fontSize=".25" fill="#52674d">{h.template.name.toUpperCase()} / ROAD: {h.entranceEdge.toUpperCase()}</text>
     <text x={h.width/2} y={drawLength+.75} textAnchor="middle" fontSize=".22" fill="#786d58">GOLD DOT: ENTRANCE / DASHED ROOMS: REQUESTED ADDITIONS</text>
     <text x={h.width+.55} y={h.length/2} textAnchor="middle" fontSize=".28" fill="#52674d" transform={`rotate(90 ${h.width+.55} ${h.length/2})`}>{h.length.toFixed(1)} m</text>
