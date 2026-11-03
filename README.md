@@ -6,7 +6,7 @@ insta# SmartHouse
 
 SmartHouse will guide homeowners through an architectural consultation, turn their answers into a confirmed design brief, and generate personalised house concepts with matching floor plans, interactive visual models, and estimated construction costs. Users will refine options and download a concept design package.
 
-**Project status:** the login-free prototype includes browser-local projects, a guided consultation, confirmed briefs, and schematic room previews with demo estimates and JSON downloads. Full architectural generation, 3D building models, and concept plan packages remain planned. See [prototype progress](docs/PROTOTYPE_PROGRESS.md).
+**Project status:** the login-free prototype includes browser-local projects, guided consultation, confirmed briefs, three dataset-derived layout families, interactive 3D models, demo estimates and SVG/JSON downloads. Room-size profiles and optional en-suite, wardrobe, dining, entertainment and garage spaces change the generated geometry. Automatic interpretation of arbitrary plan images and professional concept packages remain future work. See [prototype progress](docs/PROTOTYPE_PROGRESS.md) and [dataset templates](docs/DATASET_TEMPLATES.md).
 
 ## Product workflow
 

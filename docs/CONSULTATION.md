@@ -2,6 +2,39 @@
 
 **Status:** Proposed questionnaire and interaction specification. See [requirements](REQUIREMENTS.md).
 
+## Current frontend implementation
+
+The generator now supports three dataset-derived layout families and the additive
+optional keys `spaceLevel`, `layoutPreference` and `homeFeatures`. These control
+room sizes, the source family and actual additional rooms, independently of finish
+quality. Existing keys/options are retained. See [dataset templates](DATASET_TEMPLATES.md)
+for values, defaults, en-suite counting and the server integration contract.
+
+The active questionnaire is `client/src/demo/consultation.json`. The recent UI
+refinement changes hints and presentation without renaming question keys or option
+values. Its existing `budgetIncludes` multiselect stores an array of option strings.
+Consumers must format this array with separators rather than concatenating items.
+
+`client/src/utils/consultation.js` shares validation between the page, review and
+local data adapter. Save & continue validates all visible questions in the current
+section, including required answers. Save draft checks supplied values but permits
+missing required answers. Confirmation checks all visible sections, supported site
+scope and acknowledgement. Errors use question keys so the UI can return to the
+relevant section and focus the first invalid input. Conditional hidden answers are
+retained in the editable draft but are excluded from confirmed local briefs.
+
+The review's initial area/cost/plot check uses the existing layout generator and
+its illustrative rates. An over-budget or oversized arrangement can still be
+confirmed as a flagged option. Non-rectangular and explicitly sloped sites can be
+saved as drafts but cannot generate a concept. Unknown terrain remains explicit;
+the preview assumes a flat site. No compliance or construction affordability is
+established by these checks.
+
+Supabase integration remains separate work. Its adapter should map database errors
+to `error.fields`, maintain revision-conflict handling, validate the same types and
+conditional requirements server-side, and preserve existing drafts when a save or
+confirmation fails. The frontend validator is user feedback, not a security boundary.
+
 ## Interaction principles
 
 Use short steps with visible progress, back navigation, save-and-resume, units, and an editable summary. Explain why a question matters. Offer "I do not know" for optional site facts. Required numeric inputs cannot be replaced with guesses. Each response has a support status: implemented constraint, supported preference, recorded-only information, or unresolved input.

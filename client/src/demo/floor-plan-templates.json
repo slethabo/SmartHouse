@@ -1,0 +1,41 @@
+[
+  {
+    "id": "linear-649", "name": "Linear living", "recipe": "linear", "sourceId": "649",
+    "sourceFile": "649_png.rf.6054d34ffc6bb4ca30b72eae87a35c2a.jpg",
+    "image": "/floor-plan-references/649.jpg", "preferredBedrooms": [1, 2],
+    "description": "A narrow home with living and kitchen spaces beside a private and service band.",
+    "review": "Bedroom and service band beside living/kitchen, with entrance and rear terrace. Original sauna is simplified to storage; dimensions and extra rooms are project adaptations.",
+    "sourceRegions": [
+      {"name":"Bedroom","type":"bedroom","bounds":[0.14,0.22,0.33,0.31]},
+      {"name":"Living","type":"living","bounds":[0.49,0.21,0.43,0.41]},
+      {"name":"Kitchen","type":"kitchen","bounds":[0.70,0.63,0.22,0.23]},
+      {"name":"Bathroom","type":"bathroom","bounds":[0.15,0.58,0.32,0.18]}
+    ]
+  },
+  {
+    "id": "split-1115", "name": "Split living", "recipe": "split", "sourceId": "1115",
+    "sourceFile": "1115_png.rf.a092b2a40caa14606bfe1907dbfa29eb.jpg",
+    "image": "/floor-plan-references/1115.jpg", "preferredBedrooms": [2, 3, 4],
+    "description": "Distinct living and kitchen zones with bedrooms distributed into separate private wings.",
+    "review": "Diagonal bedrooms and separate kitchen/living around an offset entry. Stepped boundary and side terrace are retained; dimensions and extra rooms are project adaptations.",
+    "sourceRegions": [
+      {"name":"Bedroom wing 1","type":"bedroom","bounds":[0.12,0.09,0.28,0.32]},
+      {"name":"Living","type":"living","bounds":[0.50,0.09,0.39,0.43]},
+      {"name":"Bedroom wing 2","type":"bedroom","bounds":[0.59,0.54,0.30,0.30]},
+      {"name":"Kitchen","type":"kitchen","bounds":[0.12,0.42,0.28,0.28]}
+    ]
+  },
+  {
+    "id": "wide-979", "name": "Wide family residence", "recipe": "wide", "sourceId": "979",
+    "sourceFile": "979_png.rf.805f3efc565f3b3b9414876cceadd874.jpg",
+    "image": "/floor-plan-references/979.jpg", "preferredBedrooms": [3, 4, 5, 6],
+    "description": "A central living and dining spine, a service wing, and a separate bedroom wing.",
+    "review": "Manually reviewed spatial arrangement, including the garage/service wing. Porch, sauna and original dimensions are not copied; optional suites and extra rooms are project adaptations.",
+    "sourceRegions": [
+      {"name":"Garage / service wing","type":"garage","bounds":[0.08,0.26,0.18,0.37]},
+      {"name":"Central living","type":"living","bounds":[0.45,0.11,0.20,0.39]},
+      {"name":"Kitchen / dining","type":"kitchen","bounds":[0.45,0.50,0.21,0.30]},
+      {"name":"Bedroom wing","type":"bedroom","bounds":[0.66,0.11,0.31,0.23]}
+    ]
+  }
+]

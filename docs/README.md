@@ -13,6 +13,7 @@ For the active frontend-only implementation and prototype limitations, see [prot
 | [Supabase setup](../supabase/README.md) | Executable schema, Auth/RLS permissions, private storage, ERD and verification for the consultation-driven product. Not yet connected to the frontend. |
 | [Requirements](REQUIREMENTS.md) | Scope, actors, use cases, requirements, and acceptance criteria. |
 | [Architectural consultation](CONSULTATION.md) | Questions, conditional follow-ups, priorities, and confirmation of the design brief. |
+| [Dataset-derived layouts](DATASET_TEMPLATES.md) | Reviewed source plans, template adaptation, room sizes, additional spaces, provenance and verification. |
 | [Architecture](ARCHITECTURE.md) | Target modules, shared design contract, generation workflow, and system boundaries. |
 | [Data model](ERD.md) | Proposed entities, relationships, ownership, versioning, and migration constraints. |
 | [Algorithms](PSEUDOCODE.md) | Consultation, bounded layout generation, validation, costing, and export logic. |
