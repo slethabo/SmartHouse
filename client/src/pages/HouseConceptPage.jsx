@@ -52,13 +52,13 @@ export function HouseConceptPage({ brief }) {
     return () => { active = false; };
   }, []);
   const estimate = useMemo(() => priceDataState.products && priceDataState.benchmarks
-    ? estimateHouseFromCatalogue(house, house.rate, priceDataState.products, priceDataState.benchmarks)
+    ? estimateHouseFromCatalogue(house, priceDataState.products, priceDataState.benchmarks)
     : null, [house, priceDataState.products, priceDataState.benchmarks]);
   const activeView = VIEWS.find((item) => item.id === view);
   const withinBudget = estimate ? estimate.total <= Number(a.budget) : null;
   const budgetDifference = estimate ? Number(a.budget) - estimate.total : 0;
   const designConflicts = house.conflicts.filter((conflict) => !conflict.toLowerCase().includes('demo estimate'));
-  if (estimate && !withinBudget) designConflicts.push(`The illustrative estimate exceeds your budget by ${money(Math.abs(budgetDifference))}. Review your requirements or budget.`);
+  if (estimate && !withinBudget) designConflicts.push(`The estimated construction cost exceeds your budget amount by ${money(Math.abs(budgetDifference))}.`);
   const pricedHouse = estimate ? { ...house, total: estimate.total, withinBudget, conflicts: designConflicts } : house;
   const editPath = `/projects/${brief.project_id}?mode=brief`;
   const recordedNeeds = [
@@ -85,7 +85,7 @@ export function HouseConceptPage({ brief }) {
     try {
       saveFile(JSON.stringify({ stage: 'schematic house concept', briefVersion: brief.version,
         brief: brief.brief, house: pricedHouse, estimate: estimate && { ...estimate, currency: 'ZAR' },
-        assumptions: 'Fixed, in-stock product prices come from smart_house_products.json. Missing-material rates come from the separate material_price_benchmarks.json file and its cited South African retail sources. The remaining area-rate difference is an allowance for other unpriced work and labour. Quantities are schematic; professional site, dimensional and construction checks are required.' }, null, 2),
+        assumptions: 'Fixed, in-stock product prices come from smart_house_products.json. Missing-material and construction rates come from material_price_benchmarks.json and its cited South African sources. Priced material lines are counted within the construction rate materials allocation and are not added a second time; the remaining allocation covers unpriced materials and finishes. Labour, services, professional fees and contingency are included using the stated conservative shares. Quantities are schematic; professional site, dimensional and construction checks are required.' }, null, 2),
       'application/json', `smarthouse-concept-v${brief.version}.json`);
     } catch { setDownloadError('The concept data could not be downloaded. Please try again.'); }
   }
@@ -131,8 +131,8 @@ export function HouseConceptPage({ brief }) {
           {[['bed', a.bedrooms, 'Bedrooms'], ['bath', a.bathrooms, 'Bathrooms'], ['ruler', `${house.totalFloorArea.toFixed(1)} m²`, 'Total floor area'], ['layers', house.storeys||1, 'Storeys']].map(([icon, value, label]) =>
             <div key={label}><Icon name={icon} /><dt>{label}</dt><dd>{value}</dd></div>)}
         </dl>
-        <div className="hc-price"><span>ILLUSTRATIVE ESTIMATE · ITEMIZED MATERIALS + ALLOWANCE</span><strong>{estimate ? money(estimate.total) : priceDataState.error ? 'Estimate unavailable' : 'Loading material prices…'}</strong>
-          <small>{a.finish} finish · catalogue prices plus researched South African material benchmarks, with the remaining allowance disclosed below</small>
+        <div className="hc-price"><span>ILLUSTRATIVE CONSTRUCTION ESTIMATE</span><strong>{estimate ? money(estimate.total) : priceDataState.error ? 'Estimate unavailable' : 'Loading material prices…'}</strong>
+          <small>Includes materials, finishes, labour, services, professional fees and contingency using conservative South African benchmarks.</small>
           <details className="hc-accordion hc-cost-disclosure" id={`${id}-cost-breakdown`}>
             <summary>View detailed price breakdown</summary>
             {priceDataState.error && <p className="hc-download-error" role="alert">{priceDataState.error}</p>}
@@ -148,21 +148,24 @@ export function HouseConceptPage({ brief }) {
                   </>
                   : line.note}</small></dt><dd>{line.priced ? money(line.total) : 'Not priced'}</dd>
               </div>)}
-                <div><dt>Catalogue-priced materials subtotal</dt><dd>{money(estimate.catalogueSubtotal)}</dd></div>
-                <div><dt>Researched material benchmark subtotal</dt><dd>{money(estimate.researchedMaterialsSubtotal)}</dd></div>
-                <div><dt>All priced materials subtotal</dt><dd>{money(estimate.pricedMaterialsSubtotal)}</dd></div>
-                {estimate.structuralAllowanceSubtotal>0&&<div><dt>Stairs and upper-level structural allowances</dt><dd>{money(estimate.structuralAllowanceSubtotal)}</dd></div>}
-                <div><dt>{estimate.allowanceLabel}<small>Remaining difference from the {money(estimate.ratePerM2)} / m² demo-rate baseline</small></dt><dd>{money(estimate.allowance)}</dd></div>
-                <div className="hc-cost-total"><dt>Estimated total</dt><dd>{money(estimate.total)}</dd></div></dl>
-              <p className="hc-fine-print">{estimate.pricingNote} The exterior door and other materials without a usable fixed catalogue price or researched benchmark remain in the allowance.</p>
+                <div><dt>Priced material lines (included below)</dt><dd>{money(estimate.pricedMaterialsSubtotal)}</dd></div>
+                <div><dt>Other materials and finishes allowance</dt><dd>{money(estimate.otherMaterialsAndFinishes)}</dd></div>
+                {estimate.materialOverrun > 0 && <div><dt>Priced materials above base materials allocation</dt><dd>{money(estimate.materialOverrun)}</dd></div>}
+                {estimate.structuralAllowanceSubtotal > 0 && <div><dt>Stairs and upper-level structural allowances</dt><dd>{money(estimate.structuralAllowanceSubtotal)}</dd></div>}
+                {estimate.categories.map((category) => <div key={category.key}><dt>{category.label}</dt><dd>{money(category.total)}</dd></div>)}
+                <div className="hc-cost-total"><dt>Estimated construction total</dt><dd>{money(estimate.total)}</dd></div></dl>
+              <p className="hc-fine-print">{estimate.pricingNote}</p>
+              <p className="hc-fine-print">The priced-material subtotal and other-materials allowance are details within the Materials and finishes category; only the category rows are added to the total.</p>
+              <p className="hc-fine-print">Construction-rate sources: {estimate.constructionSources.map((source, index) => <span key={`${source.url}-${index}`}>{index > 0 ? ', ' : ''}<a href={source.url} target="_blank" rel="noopener noreferrer">{source.name} ({source.priceLabel})</a></span>)}</p>
             </>}
           </details>
         </div>
         {estimate
           ? <div className={`hc-budget ${withinBudget ? '' : 'hc-budget--over'}`}>
               <Icon name={withinBudget ? 'check' : 'alert'} size={17} />
-              <div><strong>{withinBudget ? 'Within your stated budget' : 'This concept exceeds your budget'}</strong>
-                <span>{money(Math.abs(budgetDifference))} {withinBudget ? 'remaining' : 'over'} · Budget {money(Number(a.budget))}</span>{!withinBudget && <p>This layout does not meet your budget. Revise the room requirements or budget before treating it as a feasible option.</p>}</div>
+              <div><strong>{withinBudget ? 'Estimated construction cost is within your budget' : 'Estimated construction cost exceeds your budget'}</strong>
+                <span>{withinBudget ? `${money(budgetDifference)} budget not yet used` : `${money(Math.abs(budgetDifference))} over budget`} · Budget {money(Number(a.budget))}.</span>
+                {!withinBudget && <p>This layout does not meet your budget. Revise the room requirements or budget before treating it as a feasible option.</p>}</div>
             </div>
           : <p role={priceDataState.error ? 'alert' : 'status'}>{priceDataState.error || 'Loading the estimate and budget comparison…'}</p>}
         <Button to={editPath} icon="edit" block>Refine my brief</Button>
@@ -212,9 +215,9 @@ export function HouseConceptPage({ brief }) {
       </section>
 
       <section className="hc-section hc-cost-section" id={`${id}-costs`} aria-labelledby={`${id}-cost-title`}>
-        <span className="hc-eyebrow">KNOW WHAT YOU ARE PLANNING FOR</span><h3 id={`${id}-cost-title`}>Your construction estimate.</h3>
+        <span className="hc-eyebrow">KNOW WHAT YOU ARE PLANNING FOR</span><h3 id={`${id}-cost-title`}>Your estimated construction cost.</h3>
         <p>{estimate
-          ? `Catalogue-priced materials total ${money(estimate.catalogueSubtotal)} and researched material benchmarks total ${money(estimate.researchedMaterialsSubtotal)}. The remaining ${money(estimate.allowance)} is a disclosed allowance for other unpriced work and labour.`
+          ? `The estimated total of ${money(estimate.total)} includes the selected ${a.finish.toLowerCase()} finish level, catalogue and researched materials, plus allowances for other materials, labour, services, professional fees and contingency.`
           : priceDataState.error || 'Loading catalogue and researched material prices to calculate the estimate.'}</p>
         <p className="hc-fine-print">{estimate?.pricingNote || 'The illustrative estimate uses local catalogue prices and researched material benchmarks when available; the detailed breakdown is loading.'}</p>
         <details className="hc-accordion"><summary>Your stated budget inclusions</summary><p>{formatConsultationAnswer(a.budgetIncludes)}</p><p className="hc-fine-print">Recorded from your brief; these inclusions do not automatically change the quantities in the estimate.</p></details>

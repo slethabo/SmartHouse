@@ -4,7 +4,6 @@ import { roofPanels } from './architecture';
 /** Finish levels in ascending price order. */
 const FINISH_LEVELS = ['basic', 'standard', 'premium'];
 
-/** Existing demo rates used only for the unpriced remainder allowance. */
 const BREAKDOWN_SHARES = Object.freeze({
   structure: 0.45,
   finishes: 0.25,
@@ -100,20 +99,35 @@ function getRoofSurfaceArea(house) {
 }
 
 /**
- * Estimate catalogue-priced and externally benchmarked materials, then disclose
- * the remaining demo-rate allowance for labour and other unpriced components.
+ * Estimate material quantities, then fit priced items into a conservative
+ * construction-rate model so those items are not added twice.
  * @param {object} house Generated layout.
- * @param {number} ratePerM2 Existing demo construction allowance rate.
  * @param {Array<object>} products Parsed catalogue products.
- * @param {object} benchmarks Researched material price benchmarks.
+ * @param {object} benchmarks Researched material and construction benchmarks.
  */
-function estimateHouseFromCatalogue(house, ratePerM2, products, benchmarks) {
+function estimateHouseFromCatalogue(house, products, benchmarks) {
   if (!Array.isArray(products)) throw new Error('The product catalogue could not be read.');
   if (!benchmarks?.rates || benchmarks.currency !== 'ZAR') throw new Error('Material price benchmarks could not be read.');
-  const area = positiveNumber(house.totalFloorArea||house.footprintArea, 'Floor area');
-  const upperArea=house.additionalStoreyAllowance?.upperFloorArea||0;
-  const insulationArea=house.floors?house.floors[house.floors.length-1].area:area;
-  const rate = positiveNumber(ratePerM2, 'Allowance rate per m²');
+  const constructionCosts = benchmarks.rates.constructionCosts;
+  const finishLevel = String(house.finish || 'basic').toLowerCase();
+  const finishRate = constructionCosts?.finishRatesPerM2?.[finishLevel];
+  const shares = constructionCosts?.costShares;
+  if (!finishRate || !shares || !finishRate.label || !finishRate.averageMethod
+    || !Array.isArray(finishRate.sources) || finishRate.sources.length === 0) {
+    throw new Error(`A valid ${finishLevel} construction cost benchmark is required.`);
+  }
+  const materialsShare = positiveNumber(shares.materials, 'Materials cost share');
+  const labourShare = positiveNumber(shares.labour, 'Labour cost share');
+  const servicesShare = positiveNumber(shares.servicesAndSpecialistWork, 'Services cost share');
+  const professionalFeesShare = positiveNumber(shares.professionalFees, 'Professional fees share');
+  const contingencyShare = positiveNumber(shares.contingency, 'Contingency cost share');
+  if (Math.abs(materialsShare + labourShare + servicesShare - 1) > 0.001) {
+    throw new Error('Materials, labour and services shares must sum to 100% of the base construction rate.');
+  }
+  const finishRatePerM2 = positiveNumber(finishRate.unitPrice, `${finishLevel} construction rate`);
+  const area = positiveNumber(house.totalFloorArea || house.footprintArea, 'Floor area');
+  const upperArea = house.additionalStoreyAllowance?.upperFloorArea || 0;
+  const insulationArea = house.floors ? house.floors[house.floors.length - 1].area : area;
   const exteriorPerimeter = (house.walls || []).filter((wall) => wall.exterior).reduce((sum, wall) => sum + wall.length, 0)
     || 2 * (house.width + house.length);
   const windows = house.windows || [];
@@ -151,11 +165,11 @@ function estimateHouseFromCatalogue(house, ratePerM2, products, benchmarks) {
       total: unitPrice !== null && available ? Math.round(quantity * unitPrice) : null,
       priced: unitPrice !== null && available,
       note: !product
-        ? 'Product not found in the catalogue.'
+        ? 'Not individually priced; covered by the other materials and finishes allowance.'
         : !available
-          ? 'Currently out of stock; left in the unpriced allowance.'
+          ? 'Currently out of stock; covered by the other materials and finishes allowance.'
           : unitPrice === null
-            ? 'Catalogue price is variable or unavailable; left in the unpriced allowance.'
+            ? 'Catalogue price is variable or unavailable; covered by the other materials and finishes allowance.'
             : null,
     };
   });
@@ -205,21 +219,43 @@ function estimateHouseFromCatalogue(house, ratePerM2, products, benchmarks) {
       assumption:'One switchback stair per floor connection; indicative structure and guarding allowance, not a quotation.'},
   ]:[];
   const structuralAllowanceSubtotal=structuralLines.reduce((sum,line)=>sum+line.total,0);
-  const areaAllowance = Math.round(area * rate);
-  const total = Math.max(areaAllowance, pricedMaterialsSubtotal)+structuralAllowanceSubtotal;
-  const allowance = total - pricedMaterialsSubtotal-structuralAllowanceSubtotal;
+  const constructionBase = estimateCost(area, finishRatePerM2);
+  const materialsAllocation = Math.round(constructionBase * materialsShare);
+  const labour = Math.round(constructionBase * labourShare);
+  const servicesAndSpecialistWork = constructionBase - materialsAllocation - labour;
+  const otherMaterialsAndFinishes = Math.max(0, materialsAllocation - pricedMaterialsSubtotal);
+  const professionalFees = Math.round(constructionBase * professionalFeesShare);
+  const contingency = Math.round(constructionBase * contingencyShare);
+  const materialOverrun = Math.max(0, pricedMaterialsSubtotal - materialsAllocation);
+  const categories = [
+    { key: 'materials', label: 'Materials and finishes', total: Math.max(pricedMaterialsSubtotal, materialsAllocation) },
+    { key: 'labour', label: 'Construction labour', total: labour },
+    { key: 'services', label: 'Services and specialist work', total: servicesAndSpecialistWork },
+    { key: 'professionalFees', label: 'Professional fees and compliance', total: professionalFees },
+    { key: 'contingency', label: 'Contingency', total: contingency },
+  ];
+  if (materialOverrun > 0) {
+    categories[0].label += ' (priced materials exceed allocation)';
+  }
+  const total = categories.reduce((sum, category) => sum + category.total, 0) + structuralAllowanceSubtotal;
+  const constructionSources = [...finishRate.sources, ...shares.sources];
   return {
     total,
-    ratePerM2: rate,
-    areaAllowance,
     catalogueSubtotal,
     researchedMaterialsSubtotal,
     pricedMaterialsSubtotal,
-    allowance,
     structuralAllowanceSubtotal,
-    lines: [...lines, ...researchLines,...structuralLines],
-    allowanceLabel: 'Other unpriced materials, finishes, labour, services and contingency',
-    pricingNote: `Catalogue lines use fixed, in-stock ZAR prices from smart_house_products.json. Additional materials use South African retail benchmarks averaged on ${benchmarks.researchedOn}; store prices and availability vary. The base is the greater of the total-floor-area allowance and priced materials. Multi-storey projects then add separately disclosed stair and upper-structure prototype allowances, not supplier prices. The remaining difference is an allowance for unpriced work and labour. Quantities are schematic and use the assumptions on each line. This is not a supplier quote.`,
+    constructionBase,
+    constructionRatePerM2: finishRatePerM2,
+    constructionRateLabel: finishRate.label,
+    constructionRateMethod: finishRate.averageMethod,
+    constructionSources,
+    materialsAllocation,
+    otherMaterialsAndFinishes,
+    materialOverrun,
+    categories,
+    lines: [...lines, ...researchLines, ...structuralLines],
+    pricingNote: `${finishRate.label} uses a conservative base rate of ${finishRatePerM2.toLocaleString('en-ZA')} ZAR/m² (${finishRate.averageMethod}). The base rate includes a materials allocation of ${Math.round(materialsShare * 100)}%, labour of ${Math.round(labourShare * 100)}%, and services/specialist work of ${Math.round(servicesShare * 100)}%; professional fees and contingency are each added at ${Math.round(professionalFeesShare * 100)}% and ${Math.round(contingencyShare * 100)}% of the base rate. Catalogue and researched material lines are included within—not added on top of—the materials allocation. Any remaining allocation covers unpriced materials and finishes; if priced materials exceed it, only the excess is added. Multi-storey projects also include separately disclosed stair and upper-structure prototype allowances, not supplier prices. ${shares.averageMethod} Rates researched ${benchmarks.researchedOn}; quantities are schematic and store prices vary. This is an early planning estimate, not a quote or quantity-surveyor estimate.`,
   };
 }
 

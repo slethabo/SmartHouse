@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "currency": "ZAR",
   "researchedOn": "2026-11-03",
-  "description": "Indicative South African retail benchmarks for common materials not available as fixed-price, in-stock items in smart_house_products.json. Retail prices vary by store, location, stock and date; these are planning estimates, not supplier quotes.",
+  "description": "Indicative South African retail benchmarks for materials not available as fixed-price, in-stock items in smart_house_products.json, plus conservative construction rates and cost shares. Retail and construction rates vary by supplier, location, scope and date; these are planning estimates, not supplier quotes.",
   "rates": {
     "windows": {
       "label": "Aluminium windows (standard-size equivalent)",
@@ -122,6 +122,71 @@
           "url": "https://leroymerlin.co.za/polyester-ceiling-insulation-100mm-7-2m2-isotherm-81423874"
         }
       ]
+    },
+    "constructionCosts": {
+      "finishRatesPerM2": {
+        "basic": {
+          "unitPrice": 6500,
+          "label": "Economic/basic house construction",
+          "averageMethod": "Conservative economic-build reference rate, chosen as the lower published entry point; actual scope and location vary.",
+          "sources": [
+            {
+              "name": "ooba Home Loans",
+              "priceLabel": "Quotes Wisemove 2025: starts at R6,500/m² for a small economic home",
+              "url": "https://www.ooba.co.za/resources/cost-to-build-a-house"
+            }
+          ]
+        },
+        "standard": {
+          "unitPrice": 9400,
+          "label": "Standard house construction",
+          "averageMethod": "Published Gauteng-baseline naked construction rate for a standard single dwelling; materials, labour and specialist subcontractors are included, project add-ons are separate.",
+          "sources": [
+            {
+              "name": "AprIQ",
+              "priceLabel": "R9,400/m² standard single dwelling base rate (2025/26 Gauteng baseline)",
+              "url": "https://www.apriq.co.za/blog/cost-to-build-a-house-in-south-africa-2026"
+            }
+          ]
+        },
+        "premium": {
+          "unitPrice": 13500,
+          "label": "Luxury/premium house construction",
+          "averageMethod": "Published luxury-dwelling naked construction rate used as a conservative premium-finish proxy; finishes and location can raise actual costs.",
+          "sources": [
+            {
+              "name": "AprIQ",
+              "priceLabel": "R13,500/m² luxury dwelling base rate (2025/26 Gauteng baseline)",
+              "url": "https://www.apriq.co.za/blog/cost-to-build-a-house-in-south-africa-2026"
+            }
+          ]
+        }
+      },
+      "costShares": {
+        "materials": 0.55,
+        "labour": 0.25,
+        "servicesAndSpecialistWork": 0.2,
+        "professionalFees": 0.1,
+        "contingency": 0.1,
+        "averageMethod": "Use the lower end of published materials (55–60%) and labour (25–30%) shares within the naked construction rate; the remaining 20% covers other direct services and specialist work. Add 10% professional fees (8% architect plus 2% structural-engineering reference) and 10% contingency, the lower end of a published 10–15% contingency range. The split is a planning model, not a quantity-surveyor bill.",
+        "sources": [
+          {
+            "name": "JobOS",
+            "priceLabel": "2026 standard-build cost split: materials 55–60%, labour 25–30%, fees/compliance 8–12%, contingency 5–10%",
+            "url": "https://jobos.pro/blog/cost-of-building-a-house-in-south-africa-2026-complete-price-breakdown/"
+          },
+          {
+            "name": "ooba Home Loans",
+            "priceLabel": "Labour 25–30%; architect up to 8%; structural engineer 2%; contingency guidance 10–15%",
+            "url": "https://www.ooba.co.za/resources/cost-to-build-a-house"
+          },
+          {
+            "name": "AprIQ",
+            "priceLabel": "Standard base rate includes materials, labour and specialist subcontractors; contingency, fees and other project layers are added separately",
+            "url": "https://www.apriq.co.za/blog/cost-to-build-a-house-in-south-africa-2026"
+          }
+        ]
+      }
     }
   }
 }

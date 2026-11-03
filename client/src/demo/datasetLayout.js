@@ -36,7 +36,7 @@ function buildCandidate(answers,template) {
     roofBaseElevation:(storeys-1)*FLOOR_HEIGHT,roofPlans:layout.roofPlans,
     roofForm,roofDesign,siteWidth,siteDepth,
     layoutDescription:storeys>1?`${storeys} levels with a shared stair core, stacked service zones and aligned room wings. Social rooms are downstairs; the main bedroom is on the top floor.`:template.description,
-    width,length,wall,rooms,...geometry,footprintArea,
+    width,length,wall,rooms,...geometry,footprintArea,finish:answers.finish,
     circulationArea:+rooms.filter((r)=>r.type==='hall').reduce((n,r)=>n+r.area,0).toFixed(2),plotFrontage,plotDepth,rate,total,conflicts,notes,fitsPlot,withinBudget,style:answers.style,
     entranceEdge:answers.access==='Unknown'?'Unspecified':answers.access,spaceLevel:answers.spaceLevel||'Balanced',features,
     template:{...template,license:'CC BY 4.0',sourceUrl:'https://universe.roboflow.com/umair-ab9ex/floor-plans-500-xqdyk/dataset/1',

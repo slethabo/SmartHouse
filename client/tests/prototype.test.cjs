@@ -160,7 +160,7 @@ test('catalogue and researched material prices are itemized and sum to the estim
   const house = createHouseConcept(answers);
   const products = JSON.parse(fs.readFileSync(path.join(__dirname, '../../smart_house_products.json'), 'utf8'));
   const benchmarks = JSON.parse(fs.readFileSync(path.join(__dirname, '../src/demo/material_price_benchmarks.json'), 'utf8'));
-  const estimate = estimateHouseFromCatalogue(house, house.rate, products, benchmarks);
+  const estimate = estimateHouseFromCatalogue(house, products, benchmarks);
   assert.ok(estimate.lines.find((line) => line.key === 'bricks').total > 0);
   assert.ok(estimate.lines.find((line) => line.key === 'concrete').total > 0);
   assert.ok(estimate.lines.find((line) => line.key === 'gutters').total > 0);
@@ -184,23 +184,39 @@ test('catalogue and researched material prices are itemized and sum to the estim
   assert.equal(estimate.catalogueSubtotal, catalogueLines.reduce((sum, line) => sum + (line.total || 0), 0));
   assert.equal(estimate.researchedMaterialsSubtotal, researchLines.reduce((sum, line) => sum + line.total, 0));
   assert.equal(estimate.pricedMaterialsSubtotal, estimate.catalogueSubtotal + estimate.researchedMaterialsSubtotal);
-  assert.equal(estimate.pricedMaterialsSubtotal + estimate.allowance, estimate.total);
-  assert.equal(estimate.total, Math.max(house.total, estimate.pricedMaterialsSubtotal));
+  assert.equal(estimate.constructionBase, Math.round(house.footprintArea * benchmarks.rates.constructionCosts.finishRatesPerM2.basic.unitPrice));
+  assert.equal(estimate.materialsAllocation, Math.round(estimate.constructionBase * benchmarks.rates.constructionCosts.costShares.materials));
+  assert.equal(estimate.otherMaterialsAndFinishes, Math.max(0, estimate.materialsAllocation - estimate.pricedMaterialsSubtotal));
+  assert.equal(estimate.categories[0].total, Math.max(estimate.materialsAllocation, estimate.pricedMaterialsSubtotal));
+  assert.equal(estimate.total, estimate.categories.reduce((sum, category) => sum + category.total, 0));
+  assert.deepEqual(estimate.categories.map((category) => category.key), ['materials', 'labour', 'services', 'professionalFees', 'contingency']);
+  assert.ok(estimate.categories.slice(1).every((category) => category.total > 0));
+  assert.ok(estimate.constructionSources.length >= 2);
+  assert.equal('allowance' in estimate, false);
+  assert.equal('excludedCostsLabel' in estimate, false);
+  assert.match(estimate.pricingNote, /included within—not added on top of—the materials allocation/);
   assert.ok(researchLines.every((line) => line.sources.length >= 2 && line.sources.every((source) => source.url.startsWith('https://'))));
   assert.match(estimate.pricingNote, /2026-11-03/);
   const unavailableProduct = { id: 133, sku: 'RANGED', name: 'Variable brick price', is_in_stock: true, prices: { price: '280', currency_code: 'ZAR', currency_minor_unit: 2, price_range: { min_amount: '280', max_amount: '500' } } };
-  const unavailable = estimateHouseFromCatalogue(house, house.rate, [unavailableProduct], benchmarks);
+  const unavailable = estimateHouseFromCatalogue(house, [unavailableProduct], benchmarks);
   assert.equal(unavailable.lines.find((line) => line.key === 'bricks').priced, false);
-  assert.match(unavailable.lines.find((line) => line.key === 'bricks').note, /variable or unavailable/);
+  assert.match(unavailable.lines.find((line) => line.key === 'bricks').note, /covered by the other materials and finishes allowance/);
+  const overrunBenchmarks = JSON.parse(JSON.stringify(benchmarks));
+  overrunBenchmarks.rates.windows.unitPrice = 10000000;
+  const overrun = estimateHouseFromCatalogue(house, products, overrunBenchmarks);
+  assert.equal(overrun.otherMaterialsAndFinishes, 0);
+  assert.equal(overrun.materialOverrun, overrun.pricedMaterialsSubtotal - overrun.materialsAllocation);
+  assert.equal(overrun.categories[0].total, overrun.pricedMaterialsSubtotal);
+  assert.equal(overrun.total, overrun.categories.reduce((sum, category) => sum + category.total, 0));
 });
 
 test('legacy flat roofs omit sloped-roof-only benchmark materials and missing price data fails explicitly', () => {
   const benchmarks = JSON.parse(fs.readFileSync(path.join(__dirname, '../src/demo/material_price_benchmarks.json'), 'utf8'));
   const products = JSON.parse(fs.readFileSync(path.join(__dirname, '../../smart_house_products.json'), 'utf8'));
   const flatHouse = { ...createHouseConcept({ ...answers, style: 'Minimalist' }), roofDesign: 'stepped-flat' };
-  const estimate = estimateHouseFromCatalogue(flatHouse, flatHouse.rate, products, benchmarks);
+  const estimate = estimateHouseFromCatalogue(flatHouse, products, benchmarks);
   assert.equal(estimate.lines.some((line) => ['roofSheets', 'roofTrusses'].includes(line.key)), false);
-  assert.throws(() => estimateHouseFromCatalogue(flatHouse, flatHouse.rate, products), /benchmarks could not be read/);
+  assert.throws(() => estimateHouseFromCatalogue(flatHouse, products), /benchmarks could not be read/);
 });
 
 test('3D model matches room floors and contains actual window openings in its walls', () => {
@@ -309,7 +325,7 @@ test('six-bedroom roofs have no overlapping faces and exterior walls stay below 
         if(profile[i+1].offset-profile[i].offset>1e-6&&sample>0&&sample<4)assert.ok(Math.abs(height-roof)<1e-5,'Wall spans must follow their roof plane; junction steps are vertical');
       }
     }
-    const estimate=estimateHouseFromCatalogue(house,house.rate,JSON.parse(fs.readFileSync(path.join(__dirname,'../../smart_house_products.json'),'utf8')),JSON.parse(fs.readFileSync(path.join(__dirname,'../src/demo/material_price_benchmarks.json'),'utf8')));
+    const estimate=estimateHouseFromCatalogue(house,JSON.parse(fs.readFileSync(path.join(__dirname,'../../smart_house_products.json'),'utf8')),JSON.parse(fs.readFileSync(path.join(__dirname,'../src/demo/material_price_benchmarks.json'),'utf8')));
     assert.ok(Number.isFinite(estimate.total)&&estimate.total>0,'Both roof forms must remain priceable after polygon trimming');
   }
 });
@@ -566,9 +582,9 @@ test('multi-storey meshes contain real stairs and slab openings, with inspectabl
     model.setFloor(0);assert.ok(model.floorGroups.slice(1).every(f=>!f.root.visible));assert.equal(model.roof.visible,false);
     model.showAll();assert.ok(model.floorGroups.every(f=>f.root.visible));assert.equal(model.roof.visible,true);
     model.root.traverse(o=>{if(o.geometry?.attributes.position)assert.ok(Array.from(o.geometry.attributes.position.array).every(Number.isFinite));});
-    const estimate=estimateHouseFromCatalogue(house,house.rate,products,benchmarks);
+    const estimate=estimateHouseFromCatalogue(house,products,benchmarks);
     assert.ok(estimate.structuralAllowanceSubtotal>0);assert.ok(estimate.lines.some(l=>l.key==='stairs'&&l.quantity===storeys-1));
-    assert.equal(estimate.total,estimate.pricedMaterialsSubtotal+estimate.structuralAllowanceSubtotal+estimate.allowance);
+    assert.equal(estimate.total,estimate.categories.reduce((sum,category)=>sum+category.total,0)+estimate.structuralAllowanceSubtotal);
     disposeHouseModel(model.root);
   }
 });

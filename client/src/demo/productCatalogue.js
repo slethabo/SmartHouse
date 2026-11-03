@@ -39,7 +39,26 @@ export function loadMaterialPriceBenchmarks() {
           || rate.sources.length < 2
           || rate.sources.some((source) => !source.name || !source.priceLabel || !source.url?.startsWith('https://'));
       });
-      if (invalidRate) throw new Error('Material price benchmarks are incomplete or invalid.');
+      const constructionCosts = benchmarks.rates.constructionCosts;
+      const finishRates = constructionCosts?.finishRatesPerM2;
+      const shares = constructionCosts?.costShares;
+      const invalidConstructionRate = !finishRates || ['basic', 'standard', 'premium'].some((level) => {
+        const rate = finishRates[level];
+        return !rate?.label
+          || !rate.averageMethod
+          || !Number.isFinite(Number(rate.unitPrice))
+          || Number(rate.unitPrice) <= 0
+          || !Array.isArray(rate.sources)
+          || rate.sources.length === 0
+          || rate.sources.some((source) => !source.name || !source.priceLabel || !source.url?.startsWith('https://'));
+      }) || !shares?.averageMethod
+        || !Array.isArray(shares.sources)
+        || shares.sources.length === 0
+        || shares.sources.some((source) => !source.name || !source.priceLabel || !source.url?.startsWith('https://'))
+        || ['materials', 'labour', 'servicesAndSpecialistWork', 'professionalFees', 'contingency']
+          .some((key) => !Number.isFinite(Number(shares[key])) || Number(shares[key]) <= 0 || Number(shares[key]) >= 1)
+        || Math.abs(Number(shares?.materials) + Number(shares?.labour) + Number(shares?.servicesAndSpecialistWork) - 1) > 0.001;
+      if (invalidRate || invalidConstructionRate) throw new Error('Material and construction price benchmarks are incomplete or invalid.');
       return benchmarks;
     }).catch((error) => {
       materialPriceRequest = null;
