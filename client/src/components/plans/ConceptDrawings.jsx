@@ -66,8 +66,8 @@ export function HousePreview({ house:h,roofVisible }) {
       </g>;
     })}
     {roofVisible&&surfaces.sort((a,b)=>depth(b.points)-depth(a.points)).map((p,i)=><g key={i}>
-      <polygon points={polygon(p.points.map(([x,y,z])=>[x,y,z-.14]))} fill="#35433e" stroke="#35433e" strokeWidth="2" />
-      <polygon points={polygon(p.points)} fill={h.style==='Traditional'?'#8e6958':p.zone==='public'?'#596661':'#788079'} stroke={h.style==='Traditional'?'#80604f':'#788079'} strokeWidth=".5" />
+      <polygon points={polygon(p.points.map(([x,y,z])=>[x,y,z-.14]))} fill="#35433e" />
+      <polygon points={polygon(p.points)} fill={h.style==='Traditional'?'#8e6958':'#596661'} />
     </g>)}
     <text x="-40" y={h.width*10+46} fontSize="11" fill="#5c7351">{h.template.name.toUpperCase()} / {roofVisible?h.roofDesign.toUpperCase():'CUTAWAY'}</text>
   </svg>;

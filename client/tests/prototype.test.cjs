@@ -271,7 +271,8 @@ test('source cores remain distinct and bedroom additions preserve the original r
     if(layoutPreference!=='Linear living')assert.ok(base.footprintArea<base.width*base.length-1,'Source setbacks must remain outside the enclosed area');
     const model=buildHouseModel(base);
     assert.equal(model.root.children.filter(o=>o.name.startsWith('foundation:')).length,base.rooms.length);
-    const roofRooms=new Set(model.roof.children.map(o=>o.userData.roomId));
+    assert.equal(model.roof.children.length,1,'One joined roof surface should cover the house instead of a box per room');
+    const roofRooms=new Set(model.roof.children[0].userData.roomIds);
     assert.equal(roofRooms.size,base.rooms.length,'Roofs must cover actual rooms rather than the enclosing rectangle');
     for(const wall of base.walls.filter(w=>w.exterior)){
       const x=wall.x+(wall.axis==='x'?wall.length/2:0),y=wall.y+(wall.axis==='y'?wall.length/2:0);

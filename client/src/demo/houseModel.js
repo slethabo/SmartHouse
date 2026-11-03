@@ -94,12 +94,45 @@ export function buildHouseModel(h) {
     }
   }
   const roofMaterial=new THREE.MeshStandardMaterial({color:h.style==='Traditional'?'#805b4e':'#485350',roughness:.8,side:THREE.DoubleSide});
-  for(const panel of roofPanels(h)){
-    const positions=[...panel.points,...panel.points.map(([x,z,y])=>[x,z,y-.16])].flatMap(([x,z,y])=>[x,y,z]);
-    const indices=[0,2,1,0,3,2,4,5,6,4,6,7,0,1,5,0,5,4,1,2,6,1,6,5,2,3,7,2,7,6,3,0,4,3,4,7];
-    const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setIndex(indices);geometry.computeVertexNormals();
-    const mesh=new THREE.Mesh(geometry,roofMaterial);mesh.castShadow=true;mesh.receiveShadow=true;mesh.name=`roof:${panel.roomId}`;mesh.userData.roomId=panel.roomId;roof.add(mesh);
+  const panels=roofPanels(h),cellMap=new Map(panels.map(panel=>[`${panel.ix}:${panel.iy}`,panel]));
+  const positions=[],indices=[];
+  const vertex=([x,z,y])=>{positions.push(x,y,z);return positions.length/3-1;};
+  const quad=points=>{
+    const first=positions.length/3,vertices=points.map(vertex);
+    indices.push(vertices[0],vertices[1],vertices[2],vertices[0],vertices[2],vertices[3]);
+    return first;
+  };
+  for(const panel of panels){
+    quad(panel.points);
+    const {ix,iy,x,endX,y,endY,room}=panel;
+    const edges=[
+      {neighbor:[ix,iy-1],a:[x,y],b:[endX,y]},
+      {neighbor:[ix+1,iy],a:[endX,y],b:[endX,endY]},
+      {neighbor:[ix,iy+1],a:[endX,endY],b:[x,endY]},
+      {neighbor:[ix-1,iy],a:[x,endY],b:[x,y]},
+    ];
+    for(const edge of edges){
+      const neighbor=cellMap.get(`${edge.neighbor[0]}:${edge.neighbor[1]}`);
+      const ownA=roofHeight(h,room,edge.a[0]),ownB=roofHeight(h,room,edge.b[0]);
+      if(!neighbor){
+        quad([[...edge.a,ownA],[...edge.b,ownB],[...edge.b,ownB-.16],[...edge.a,ownA-.16]]);
+        continue;
+      }
+      const otherA=roofHeight(h,neighbor.room,edge.a[0]),otherB=roofHeight(h,neighbor.room,edge.b[0]);
+      if((Math.abs(ownA-otherA)>.001||Math.abs(ownB-otherB)>.001)&&ownA+ownB>otherA+otherB){
+        const highA=Math.max(ownA,otherA),highB=Math.max(ownB,otherB);
+        const lowA=Math.min(ownA,otherA),lowB=Math.min(ownB,otherB);
+        quad([[...edge.a,highA],[...edge.b,highB],[...edge.b,lowB],[...edge.a,lowA]]);
+      }
+    }
   }
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  geometry.setIndex(indices);geometry.computeVertexNormals();
+  const mesh=new THREE.Mesh(geometry,roofMaterial);
+  mesh.castShadow=true;mesh.receiveShadow=true;mesh.name='roof-surface';
+  mesh.userData.roomIds=[...new Set(panels.map(panel=>panel.roomId))];
+  roof.add(mesh);
   return { root, exterior, interior, roof, furniture };
 }
 

@@ -38,7 +38,9 @@ export function createHouseConcept(answers) {
   const score=(h)=>{
     let value=(h.fitsPlot?10000:0)+(h.withinBudget?5000:0);
     if (preferred===h.template.id) value+=100000;
-    if (h.template.preferredBedrooms.includes(Number(answers.bedrooms))) value+=100;
+    const {min,max}=h.template.program.bedroomCapacity;
+    const bedrooms=Number(answers.bedrooms);
+    value+=bedrooms>=min&&bedrooms<=max?100:-100*Math.min(Math.abs(bedrooms-min),Math.abs(bedrooms-max));
     if ((answers.spaceLevel==='Generous'||features.includes('Double garage'))&&h.template.recipe==='wide') value+=500;
     if (answers.spaceLevel==='Compact'&&h.template.recipe==='linear') value+=300;
     return value-h.footprintArea*.01;

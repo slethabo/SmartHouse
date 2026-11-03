@@ -11,16 +11,19 @@ export function roofHeight(h,room,x) {
 }
 
 export function roofPanels(h) {
+  const xs=[...new Set(h.rooms.flatMap(r=>[r.x,r.x+r.width]))].sort((a,b)=>a-b);
+  const ys=[...new Set(h.rooms.flatMap(r=>[r.y,r.y+r.depth]))].sort((a,b)=>a-b);
+  const ridge=h.width*(h.style==='Traditional'?.5:.55);
+  if((h.style==='Traditional'||h.roofDesign==='butterfly')&&ridge>xs[0]&&ridge<xs.at(-1))xs.push(ridge);
+  xs.sort((a,b)=>a-b);
   const panels=[];
-  for(const r of h.rooms){
-    const cuts=[r.x,r.x+r.width];
-    const ridge=h.width*(h.style==='Traditional'?.5:.55);
-    if((h.style==='Traditional'||h.roofDesign==='butterfly')&&ridge>r.x&&ridge<r.x+r.width)cuts.splice(1,0,ridge);
-    for(let i=0;i<cuts.length-1;i++){
-      const x=cuts[i],end=cuts[i+1];
-      panels.push({roomId:r.id,zone:r.zone,points:[[x,r.y,roofHeight(h,r,x)],[end,r.y,roofHeight(h,r,end)],
-        [end,r.y+r.depth,roofHeight(h,r,end)],[x,r.y+r.depth,roofHeight(h,r,x)]]});
-    }
+  for(let ix=0;ix<xs.length-1;ix++)for(let iy=0;iy<ys.length-1;iy++){
+    const x=xs[ix],endX=xs[ix+1],y=ys[iy],endY=ys[iy+1],mx=(x+endX)/2,my=(y+endY)/2;
+    const room=h.rooms.find(r=>mx>r.x-.001&&mx<r.x+r.width+.001&&my>r.y-.001&&my<r.y+r.depth+.001);
+    if(!room)continue;
+    panels.push({ix,iy,roomId:room.id,zone:room.zone,room,x,endX,y,endY,
+      points:[[x,y,roofHeight(h,room,x)],[endX,y,roofHeight(h,room,endX)],
+        [endX,endY,roofHeight(h,room,endX)],[x,endY,roofHeight(h,room,x)]]});
   }
   return panels;
 }

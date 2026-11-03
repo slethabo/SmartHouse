@@ -14,13 +14,29 @@ not a trained image-to-floor-plan model or an exact reconstruction of each scan.
 | Wide family residence | 979 | Central living/dining, a garage/service wing, and a bedroom wing. | Broad service/garage wing, central shared rooms and right bedroom group; optional accommodation forms explicit additions. |
 
 Files and approximate normalised semantic regions are recorded in
-`client/src/demo/floor-plan-templates.json`. Regions were interpreted visually;
-they are not automatically inferred from YOLO IDs. The export lists door/window/zone
-classes but has no bedroom, bathroom, storey, luxury or verified metric-scale
-metadata. The inspected annotations also showed a possible class-name mismatch.
-Consequently, the application does not treat detection counts as room counts or
-infer dimensions from image pixels. All metre sizes come from documented prototype
-profiles in `datasetLayout.js`, not measured original drawings.
+`client/src/demo/floor-plan-templates.json`, ordered by stable source ID. Each
+reviewed template now has a stable catalog ID and an explicit program describing
+its native bedroom range, spatial pattern, and rule for extending the plan. The
+deterministic selector uses the bedroom range; the drawing rules use the recipe.
+These are human-reviewed interpretations, not AI predictions.
+
+The full training split is indexed in `client/Floor_plan_dataset/catalog.json`.
+Run `npm run catalog:floor-plans` to rebuild it from the paired images, YOLO
+annotations, and `data.yaml`. It groups 837 variants into 279 stable source IDs,
+orders them numerically, preserves image/label filenames, records normalized
+boxes and class counts, and marks room semantics as unreviewed. Verified class
+order is `door`, `window`, `zone`; generic zones do not identify bedrooms,
+bathrooms, or other room types. The annotations also provide no verified metric
+scale, storey count, or roof geometry. Do not treat detection counts as room
+counts or infer dimensions from image pixels. The training split contains 6,354
+door boxes, 4,853 window boxes, and 6,544 generic zone boxes.
+
+Only the three plans listed above are currently translated into explicit
+rule-based layout recipes. The remaining catalog entries are an inventory for
+human review, not ready-to-build templates. A plan must be visually reviewed
+and its room types, adjacency, entrance, openings, and dimensions explicitly
+recorded before the generator can use it. Dimensions currently come from
+prototype profiles in `sourceLayouts.js`, not measurements recovered from scans.
 
 The source files were opened and their topology reviewed during implementation.
 This is a software/visual review, not architectural certification. Original images
@@ -36,9 +52,8 @@ node scripts/prepare-floor-plans.cjs
 This offline script checks the paired source image/label files, copies only the
 three selected images into `client/public/floor-plan-references`, retains the
 dataset licence notice, and records source SHA-256 hashes in `attribution.json`.
-The imported collection has three sources; it does not include all 279 unique
-training plans or claim to learn from all 837 training images. Validation/test
-split images are not used as templates.
+This display-preparation step is separate from the complete training catalog.
+Validation/test split images are not used as templates.
 
 Source: Floor Plans 500 v1, Roboflow workspace `umair-ab9ex`, project
 `floor-plans-500-xqdyk`. The supplied export declares CC BY 4.0. Source attribution,
@@ -69,7 +84,8 @@ finish rate, including garage/storage space; this is not quantity-based costing.
 
 `layout.js` preserves the existing public function and delegates to
 `datasetLayout.js`. Each brief produces three candidates. With Best fit, candidates
-prioritise plot fit, then budget fit, then room-count/space-profile suitability;
+prioritise plot fit, then budget fit, then the template's declared bedroom range
+and space-profile suitability;
 area breaks ties. A Generous brief or garage favours the wide family when fit and
 budget checks permit it. An explicit layout preference takes precedence and may
 return a flagged conflict. Requested rooms/features are retained even when no
