@@ -130,7 +130,7 @@ export function roofSections(house) {
   sectionCache.set(house,sections);return sections;
 }
 
-function sectionHeight(section, x, y) {
+export function sectionHeight(section, x, y) {
   if (section.form === 'Intersecting gables') {
     const span = section.ridgeAxis === 'x' ? section.depth : section.width;
     const offset = section.ridgeAxis === 'x' ? y - section.ridgeCoordinate : x - section.ridgeCoordinate;
