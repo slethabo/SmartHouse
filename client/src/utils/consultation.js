@@ -47,15 +47,8 @@ export function consultationProgress(steps, answers) {
   };
 }
 
-export function siteScopeErrors(answers) {
-  const errors = {};
-  if (answers.shape && answers.shape !== 'Rectangular') errors.shape = 'This plot shape is outside the current generator’s scope. Save your brief for further design review.';
-  if (answers.terrain === 'Sloped') errors.terrain = 'Sloped sites need further design review. You can save your brief, but a house cannot be generated for this site yet.';
-  return errors;
-}
-
 const LAYOUT_KEYS = ['bedrooms', 'bathrooms', 'kitchen', 'style', 'roofForm', 'spaceLevel', 'homeFeatures', 'layoutPreference'];
-const SITE_KEYS = ['width', 'length', 'access', 'shape', 'terrain'];
+const SITE_KEYS = ['width', 'length', 'access'];
 export function questionImpact(question) {
   if (LAYOUT_KEYS.includes(question.key)) return { kind: 'layout', label: 'Shapes your concept' };
   if (SITE_KEYS.includes(question.key)) return { kind: 'site', label: 'Checks your plot' };

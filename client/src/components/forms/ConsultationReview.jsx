@@ -2,24 +2,13 @@ import { useMemo } from 'react';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { createHouseConcept } from '../../demo/layout';
-import { formatConsultationAnswer, questionVisible, siteScopeErrors, validateConsultation } from '../../utils/consultation';
+import { formatConsultationAnswer, questionVisible, validateConsultation } from '../../utils/consultation';
 
 const money = (value) => Number(value).toLocaleString('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 });
 
-export function ConsultationScopeNotice({ answers }) {
-  const messages = Object.values(siteScopeErrors(answers));
-  if (messages.length === 0 && answers.terrain !== 'Unknown') return null;
-  return <div className="consultation-readiness consultation-readiness--warning" role="status"><Icon name="info" size={19} /><div>
-    <strong>{messages.length ? 'You can save this brief for further review' : 'Your terrain is still unknown'}</strong>
-    {messages.map((message) => <p key={message}>{message}</p>)}
-    {!messages.length && <p>Any concept will assume a flat site. Confirm ground conditions before relying on the plot-fit result.</p>}
-  </div></div>;
-}
-
 export function ConsultationReview({ config, answers, onEdit, busy }) {
   const preview = useMemo(() => {
-    if (Object.keys(validateConsultation(config.steps, answers, { complete: true })).length
-      || Object.keys(siteScopeErrors(answers)).length) return null;
+    if (Object.keys(validateConsultation(config.steps, answers, { complete: true })).length) return null;
     return createHouseConcept(answers);
   }, [config.steps, answers]);
   return <>
@@ -27,7 +16,6 @@ export function ConsultationReview({ config, answers, onEdit, busy }) {
       <span><strong>{answers.bedrooms} bed / {answers.bathrooms} bath</strong>Required rooms</span>
       <span><strong>{money(answers.budget || 0)}</strong>Your construction budget</span>
       <span><strong>{answers.style || 'Not selected'}</strong>Architectural style</span></div>
-    <ConsultationScopeNotice answers={answers} />
     {preview && <section className={`consultation-readiness ${preview.conflicts.length ? 'consultation-readiness--warning' : ''}`} aria-label="Initial design checks">
       <Icon name={preview.conflicts.length ? 'alert' : 'check'} size={19} /><div>
         <strong>{preview.conflicts.length ? 'Your selected layout needs adjustment' : 'Your brief is ready to explore'}</strong>
@@ -50,7 +38,7 @@ export function ConsultationReview({ config, answers, onEdit, busy }) {
       </div>)}</dl>
     </details>)}</div>
     <div className="consultation-assumptions"><h3>Before you create the concept</h3>
-      <p>The generator supports rectangular plots and single-storey homes, with demo 1 m boundary allowances. Costs are illustrative. Confirming your brief starts a design exploration; it does not approve construction.</p>
+      <p>The generator assumes a flat, rectangular plot and supports single-storey homes, with demo 1 m boundary allowances. Site shape and slope are not assessed. Costs are illustrative. Confirming your brief starts a design exploration; it does not approve construction.</p>
     </div>
   </>;
 }

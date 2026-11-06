@@ -30,27 +30,6 @@
           "hint": "Enter the full plot length in metres. The demo fit check allows 1 m on each boundary."
         },
         {
-          "key": "shape",
-          "label": "What shape is the plot?",
-          "options": [
-            "Rectangular",
-            "Other"
-          ],
-          "required": true,
-          "hint": "The generator currently supports rectangular plots. Other shapes can be saved for further review."
-        },
-        {
-          "key": "terrain",
-          "label": "Is the land flat or sloped?",
-          "options": [
-            "Flat",
-            "Sloped",
-            "Unknown"
-          ],
-          "required": true,
-          "hint": "Sloped sites need further review. Unknown terrain is kept explicit and a generated concept assumes a flat site."
-        },
-        {
           "key": "access",
           "label": "Which edge has road access?",
           "options": [

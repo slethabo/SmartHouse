@@ -6,8 +6,6 @@ const steps = [
     { key: 'location', label: 'Where will you build?', type: 'text', required: true },
     { key: 'width', label: 'Plot width (metres)', type: 'number', min: 5, max: 200, required: true },
     { key: 'length', label: 'Plot length (metres)', type: 'number', min: 5, max: 200, required: true },
-    { key: 'shape', label: 'What shape is the plot?', options: ['Rectangular', 'Other'], required: true },
-    { key: 'terrain', label: 'Is the land flat or sloped?', options: ['Flat', 'Sloped', 'Unknown'], required: true },
     { key: 'access', label: 'Which edge has road access?', options: ['North', 'South', 'East', 'West', 'Unknown'], required: true },
   ] },
   { title: 'Budget and household', questions: [
@@ -52,14 +50,11 @@ function buildBrief(answers) {
   const clean = result.data;
   const missing = questions.filter((q) => active(q, clean) && q.required && (clean[q.key] === undefined || clean[q.key] === '' || (Array.isArray(clean[q.key]) && clean[q.key].length === 0)));
   if (missing.length) throw badRequest('Complete the required questions before confirming.', { fields: Object.fromEntries(missing.map((q) => [q.key, `${q.label} is required.`])) });
-  if (clean.shape !== 'Rectangular' || clean.terrain === 'Sloped') {
-    throw badRequest('The initial design scope supports rectangular, flat plots. Your draft can still be saved.', { code: 'UNSUPPORTED_SCOPE' });
-  }
   const visibleAnswers = Object.fromEntries(questions.filter((q) => active(q, clean) && clean[q.key] !== undefined).map((q) => [q.key, clean[q.key]]));
   return { questionnaireVersion: 1, answers: visibleAnswers, siteAreaM2: clean.width * clean.length,
     currency: 'ZAR', stage: 'concept_brief',
-    assumptions: ['Single-storey concept on a rectangular plot.', 'Budget inclusions require clarification in the future cost model.', 'Boundary clearances and site services require professional review.'],
-    reviewNotes: [ ...(clean.terrain === 'Unknown' ? ['Site terrain has not been verified.'] : []), ...(clean.access === 'Unknown' ? ['Road access direction is unknown.'] : []),
+    assumptions: ['Single-storey concept assuming a flat, rectangular plot.', 'Budget inclusions require clarification in the future cost model.', 'Boundary clearances and site services require professional review.'],
+    reviewNotes: [ ...(clean.access === 'Unknown' ? ['Road access direction is unknown.'] : []),
       'Additional essential features, accessibility, and future plans are recorded for review.', 'Validated architectural generation and pricing validation are not available in this release.' ] };
 }
 module.exports = { steps, answerSchema, buildBrief };

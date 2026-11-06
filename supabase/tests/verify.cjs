@@ -88,8 +88,8 @@ async function main() {
     await rejected("update public.consultation_drafts set revision=100",[],/permission denied/);
     check('ownership, administrator membership and direct draft writes are protected');
 
-    const answers = JSON.parse(JSON.stringify({ location:'Cape Town',width:20,length:30,shape:'Rectangular',
-      terrain:'Flat',access:'South',budget:1500000,finish:'Basic',budgetIncludes:'Materials and labour',
+    const answers = JSON.parse(JSON.stringify({ location:'Cape Town',width:20,length:30,
+      access:'South',budget:1500000,finish:'Basic',budgetIncludes:'Materials and labour',
       occupants:4,bedrooms:3,bathrooms:2,workFromHome:'No',guests:'Rarely',kitchen:'Open plan',
       style:'Modern',privacy:'No preference',accessibility:'None stated' }));
     await rejected('select public.confirm_design_brief($1,0,true)',[project.id],/Missing required/);

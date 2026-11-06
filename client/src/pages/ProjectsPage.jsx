@@ -8,8 +8,8 @@ import { PrototypeConcept } from './PrototypeConcept';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useAuth } from '../context/AuthContext';
 import { ConsultationQuestion } from '../components/forms/ConsultationQuestion';
-import { ConsultationReview, ConsultationScopeNotice } from '../components/forms/ConsultationReview';
-import { consultationProgress, questionVisible, siteScopeErrors, validateConsultation } from '../utils/consultation';
+import { ConsultationReview } from '../components/forms/ConsultationReview';
+import { consultationProgress, questionVisible, validateConsultation } from '../utils/consultation';
 import '../styles/consultation.css';
 
 const DESCRIPTIONS = [
@@ -131,7 +131,6 @@ export function ConsultationPage() {
     if (busy) return;
     const checkedSteps = advance ? [config.steps[step]] : config.steps;
     const errors = validateConsultation(checkedSteps, answers, { complete: confirm || advance });
-    if (confirm) Object.assign(errors, siteScopeErrors(answers));
     if (Object.keys(errors).length) {
       shouldFocusError.current = true;
       setFields(errors); setError('Please check the highlighted answers. Your changes are still here.'); setMessage('');
@@ -183,7 +182,6 @@ export function ConsultationPage() {
       <progress className="consultation-progress" value={progress.answered} max={Math.max(1, progress.total)} aria-label="Required answers completed" />
       {error && <Notice>{error}</Notice>}{message && <Notice type="success">{message}</Notice>}
       {!review ? <>
-        {step === 0 && <ConsultationScopeNotice answers={answers} />}
         <div className="consultation-fields">{config.steps[step].questions.filter((q) => visible(q, answers)).map((question) =>
           <ConsultationQuestion key={question.key} question={question} value={answers[question.key]} error={fields[question.key]} disabled={busy} onChange={(value) => change(question, value)} />
         )}</div>

@@ -2,7 +2,7 @@ import catalogue from './plans.json';
 import questionnaire from './consultation.json';
 import { estimateAllLevels } from './estimator';
 import { recommend } from './engine';
-import { validateConsultation, siteScopeErrors } from '../utils/consultation';
+import { validateConsultation } from '../utils/consultation';
 
 const STORAGE_KEY = 'smarthouse.frontend-prototype.v1';
 const now = () => new Date().toISOString();
@@ -38,7 +38,6 @@ function persist(state, storageKey = STORAGE_KEY) {
 }
 function validate(answers, complete = false) {
   const errors = validateConsultation(questionnaire.steps, answers, { complete });
-  if (complete) Object.assign(errors, siteScopeErrors(answers));
   if (Object.keys(errors).length) fail('Please check the highlighted answers.', 400, errors);
 }
 

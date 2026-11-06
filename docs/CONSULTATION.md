@@ -18,17 +18,17 @@ Consumers must format this array with separators rather than concatenating items
 `client/src/utils/consultation.js` shares validation between the page, review and
 local data adapter. Save & continue validates all visible questions in the current
 section, including required answers. Save draft checks supplied values but permits
-missing required answers. Confirmation checks all visible sections, supported site
-scope and acknowledgement. Errors use question keys so the UI can return to the
-relevant section and focus the first invalid input. Conditional hidden answers are
-retained in the editable draft but are excluded from confirmed local briefs.
+missing required answers. Confirmation checks all visible sections and
+acknowledgement. Errors use question keys so the UI can return to the relevant
+section and focus the first invalid input. Conditional hidden answers are retained
+in the editable draft but are excluded from confirmed local briefs.
 
 The review's initial area/cost/plot check uses the existing layout generator and
 its illustrative rates. An over-budget or oversized arrangement can still be
-confirmed as a flagged option. Non-rectangular and explicitly sloped sites can be
-saved as drafts but cannot generate a concept. Unknown terrain remains explicit;
-the preview assumes a flat site. No compliance or construction affordability is
-established by these checks.
+confirmed as a flagged option. The workflow does not ask about plot shape or site
+slope; generated concepts assume a flat, rectangular site, and that assumption is
+shown during review and on the concept page. No site-shape or terrain assessment,
+compliance check, or construction affordability is established by these checks.
 
 Supabase integration remains separate work. Its adapter should map database errors
 to `error.fields`, maintain revision-conflict handling, validate the same types and
@@ -43,7 +43,7 @@ Use short steps with visible progress, back navigation, save-and-resume, units, 
 
 | Step | Questions | Required input and follow-up behaviour |
 |---|---|---|
-| 1. Project and site | Where will you build? What are the plot width and length? Is the plot rectangular? Which boundary has road access? Do you know north orientation or boundary clearances? Is the site flat or sloped? | Width/length in metres and supported shape required. Location informs pricing context. Unknown orientation is labelled. Slope or irregular shape triggers an unsupported-site explanation. |
+| 1. Project and site | Where will you build? What are the plot width and length? Which boundary has road access? | Width/length in metres required. Location informs pricing context. Site shape and slope are not collected or assessed; generated concepts assume a flat, rectangular plot. |
 | 2. Budget | What is your construction budget and currency? Does it cover fees, site preparation, services, landscaping, and contingency? What finish level would you prefer? | Positive budget and supported currency/context required. Each cost category has included/excluded/unknown status. Resolve unknown mandatory estimate categories before feasibility claims. |
 | 3. Household | How many people will live here? How many bedrooms and bathrooms do you need? Will relatives or guests stay? Do you expect the household to grow? | Required room counts stored separately from household narrative. Guest stays prompt guest-space questions; growth prompts future-use notes. |
 | 4. Daily activities | Do you work from home? How often do you host people? Do you prefer an open or separate kitchen? What storage, laundry, pantry, and outdoor spaces do you need? | Working from home prompts office size and quietness preferences. Entertaining prompts dining/living relationships. Only supported room types become automatic requirements. |
@@ -81,7 +81,7 @@ An essential requirement uses a concrete check where supported. For example, "th
 
 ## Example brief
 
-> Single-storey concept on a 20 m by 30 m rectangular plot, with access from the southern edge. Budget: R1,500,000 in the documented demo pricing context. Three bedrooms and two bathrooms are essential. An office and covered patio are optional. The user prefers an open kitchen and separation between bedrooms and entertaining spaces. Finish level: basic. Site slope and service connections require review. Any configured boundary clearances are concept assumptions.
+> Single-storey concept assuming a flat, rectangular 20 m by 30 m plot, with access from the southern edge. Budget: R1,500,000 in the documented demo pricing context. Three bedrooms and two bathrooms are essential. An office and covered patio are optional. The user prefers an open kitchen and separation between bedrooms and entertaining spaces. Finish level: basic. Actual site shape, slope, and service connections require professional review. Any configured boundary clearances are concept assumptions.
 
 This is illustrative input, not a claim that the budget can fund this house. Generation must determine estimated feasibility using published rates.
 

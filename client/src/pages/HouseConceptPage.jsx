@@ -218,7 +218,7 @@ export function HouseConceptPage({ brief }) {
           <span className={`hc-fit-badge ${house.fitsPlot ? '' : 'hc-fit-badge--over'}`}><Icon name={house.fitsPlot ? 'check' : 'alert'} size={15} />{house.fitsPlot ? 'Fits demo envelope' : 'Needs a larger envelope'}</span></div>
         <dl className="hc-plot-facts"><div><dt>Your plot</dt><dd>{a.width} × {a.length} m</dd></div><div><dt>House footprint</dt><dd>{house.width.toFixed(1)} × {house.length.toFixed(1)} m</dd></div>
           <div><dt>Road access</dt><dd>{a.access === 'Unknown' ? 'Not specified' : a.access}</dd></div><div><dt>Boundary allowance</dt><dd>1 m each side</dd></div></dl>
-        <p className="hc-fine-print">Plot fit uses your road-access orientation and demo boundary allowances. Terrain: {a.terrain.toLowerCase()}. Local setbacks, coverage rules, services and ground conditions still need checking.</p>
+        <p className="hc-fine-print">Plot fit assumes a flat, rectangular site and uses your road-access orientation with demo boundary allowances. Site shape and slope are not assessed. Local setbacks, coverage rules, services and ground conditions still need checking.</p>
       </section>
     </div>
 

@@ -11,5 +11,15 @@ export default defineConfig({
     port: 5173,
 
   },
-  build: { outDir: 'dist', sourcemap: false },
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('/node_modules/three/')) return 'three-vendor';
+        },
+      },
+    },
+  },
 });

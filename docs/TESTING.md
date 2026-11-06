@@ -36,7 +36,7 @@
 | Duplicate generation request | Same request key returns same run; changed payload rejected. |
 | Export or 3D rendering fails | Recoverable status/fallback; no mixed or incomplete package delivered. |
 | Another user's design/export ID is supplied | Resource denied without data leakage. |
-| Unsupported slope, shape, or second floor | Scope explained and draft retained; no false support claim. |
+| Site shape or slope is not assessed | Concept clearly states the flat, rectangular-site assumption; no site assessment is implied. |
 
 ## Evaluation procedure
 

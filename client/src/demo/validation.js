@@ -17,6 +17,4 @@ export function validateAnswers(answers, complete = false) {
     if (typeof value === 'string' && value.length > 2000) errors[q.key] = 'Keep this answer under 2,000 characters.';
   }
   if (Object.keys(errors).length) fail('Please check the highlighted answers.', 400, errors);
-  if (complete && (answers.shape !== 'Rectangular' || answers.terrain === 'Sloped')) fail('For this prototype, choose a rectangular, flat plot. You can still save your draft.');
 }
-

@@ -290,15 +290,12 @@ begin
   select * into result from public.design_briefs where project_id=p_project_id and draft_revision=p_draft_revision;
   if found then return result; end if;
   a := draft.answers;
-  foreach k in array array['location','width','length','shape','terrain','access','budget','finish',
+  foreach k in array array['location','width','length','access','budget','finish',
     'budgetIncludes','occupants','bedrooms','bathrooms','workFromHome','guests','kitchen','style','privacy','accessibility'] loop
     if a->>k is null or btrim(a->>k) = '' then
       raise exception 'Missing required answer: %', k using errcode='22023';
     end if;
   end loop;
-  if a->>'shape' <> 'Rectangular' or a->>'terrain' not in ('Flat','Unknown') then
-    raise exception 'Only rectangular plots without stated sloped terrain are supported' using errcode='22023';
-  end if;
   if a->>'finish' not in ('Basic','Standard','Premium')
     or a->>'style' not in ('Modern','Traditional','Minimalist')
     or a->>'access' not in ('North','South','East','West','Unknown')

@@ -8,7 +8,7 @@ const compiled = new Module(__filename);
 compiled._compile(bundle.outputFiles[0].text, __filename);
 const { readSupabaseConfig, createSessionManager, createSupabaseProjects } = compiled.exports;
 const id = '11111111-1111-4111-8111-111111111111';
-const answers = { location: 'Demo', width: 20, length: 30, shape: 'Rectangular', terrain: 'Flat', access: 'South', budget: 1500000, finish: 'Basic', budgetIncludes: ['Labour', 'Materials'], occupants: 4, bedrooms: 3, bathrooms: 2, workFromHome: 'No', guests: 'Rarely', kitchen: 'Open plan', style: 'Modern', privacy: 'No preference', accessibility: 'None stated' };
+const answers = { location: 'Demo', width: 20, length: 30, access: 'South', budget: 1500000, finish: 'Basic', budgetIncludes: ['Labour', 'Materials'], occupants: 4, bedrooms: 3, bathrooms: 2, workFromHome: 'No', guests: 'Rarely', kitchen: 'Open plan', style: 'Modern', privacy: 'No preference', accessibility: 'None stated' };
 function fakeClient(responses) {
   const calls = [];
   const client = {};

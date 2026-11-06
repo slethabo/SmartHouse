@@ -76,11 +76,10 @@ keeping incomplete Save draft operations available. Required-answer progress and
 section completion follow visible conditional questions. Style, finish and kitchen
 choices use descriptive cards; question hints and impact labels distinguish
 generated behaviour from recorded-only needs. Brief review shows an initial demo
-estimate/plot check, explicit unsupported-site or unknown-terrain messages, and
-the limitations of recorded requirements. Shared frontend rules live in
+estimate/plot check, the flat rectangular site assumption, and the limitations of recorded requirements. Shared frontend rules live in
 `client/src/utils/consultation.js`. The prototype test runner now has 12 passing
 cases, including conditional progress, empty selections, whitespace-only answers,
-and preservation of unsupported-site drafts. This work does not connect Supabase.
+and the consultation's supported scope. This work does not connect Supabase.
 
 The consultation result now opens a dedicated house presentation page with a front
 exterior gallery, six selectable views, room/area specifications, a budget summary,

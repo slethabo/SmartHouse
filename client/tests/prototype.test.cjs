@@ -19,7 +19,7 @@ const { placeFurniture } = furnitureModule.exports;
 const consultationBundle = buildSync({ entryPoints: [path.join(__dirname, '../src/utils/consultation.js')], bundle: true, platform: 'node', format: 'cjs', write: false });
 const consultationModule = new Module(__filename);
 consultationModule._compile(consultationBundle.outputFiles[0].text, __filename);
-const { validateConsultation, consultationProgress, siteScopeErrors, formatConsultationAnswer } = consultationModule.exports;
+const { validateConsultation, consultationProgress, formatConsultationAnswer } = consultationModule.exports;
 const questionnaire = require('../src/demo/consultation.json');
 const estimatorBundle = buildSync({ entryPoints: [path.join(__dirname, '../src/demo/estimator.js')], bundle: true, platform: 'node', format: 'cjs', write: false });
 const estimatorModule = new Module(__filename);
@@ -30,7 +30,7 @@ const modelModule = new Module(__filename);
 modelModule.paths = module.paths;
 modelModule._compile(modelBundle.outputFiles[0].text, __filename);
 const { buildHouseModel, disposeHouseModel, roofPanels, roofSections, roofHeightAt, exteriorWallProfile, polygonArea, clipPolygon, roofPlane, planeHeight, THREE } = modelModule.exports;
-const answers = { location: 'Demo', width: 20, length: 30, shape: 'Rectangular', terrain: 'Flat', access: 'South', budget: 1500000, finish: 'Basic', budgetIncludes: ['Labour', 'Materials'], occupants: 4, bedrooms: 3, bathrooms: 2, workFromHome: 'No', guests: 'Rarely', kitchen: 'Open plan', style: 'Modern', privacy: 'No preference', accessibility: 'None stated' };
+const answers = { location: 'Demo', width: 20, length: 30, access: 'South', budget: 1500000, finish: 'Basic', budgetIncludes: ['Labour', 'Materials'], occupants: 4, bedrooms: 3, bathrooms: 2, workFromHome: 'No', guests: 'Rarely', kitchen: 'Open plan', style: 'Modern', privacy: 'No preference', accessibility: 'None stated' };
 beforeEach(() => {
   const storage = new Map();
   global.localStorage = { getItem: (key) => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) };
@@ -97,13 +97,15 @@ test('conditional questions affect readiness only when visible and old hidden an
   assert.equal(validateConsultation(questionnaire.steps, { ...answers, office: 'invalid hidden choice' }).office, undefined);
 });
 
-test('unsupported site conditions can be saved as drafts but cannot create a confirmed concept', async () => {
-  const { data: p } = await request('/projects', { method: 'POST', body: { title: 'Sloped site' } });
-  const draft = await request(`/projects/${p.id}/consultation`, { method: 'PUT', body: { expectedRevision: 0, answers: { ...answers, terrain: 'Sloped' } } });
-  await assert.rejects(request(`/projects/${p.id}/briefs`, { method: 'POST', body: { draftRevision: draft.data.revision, acknowledged: true } }), (error) => Boolean(error.fields.terrain));
-  assert.equal((await request(`/projects/${p.id}`)).data.draft.answers.terrain, 'Sloped');
-  assert.ok(siteScopeErrors({ shape: 'Other' }).shape);
-  assert.deepEqual(siteScopeErrors({ shape: 'Rectangular', terrain: 'Unknown' }), {});
+test('site shape and slope are not asked and the concept states its site assumptions', async () => {
+  const siteQuestions = questionnaire.steps[0].questions.map((question) => question.key);
+  assert.ok(!siteQuestions.includes('shape'));
+  assert.ok(!siteQuestions.includes('terrain'));
+  const { data: p } = await request('/projects', { method: 'POST', body: { title: 'Demo site' } });
+  const draft = await request(`/projects/${p.id}/consultation`, { method: 'PUT', body: { expectedRevision: 0, answers } });
+  const { data: brief } = await request(`/projects/${p.id}/briefs`, { method: 'POST', body: { draftRevision: draft.data.revision, acknowledged: true } });
+  assert.equal(brief.brief.answers.shape, undefined);
+  assert.equal(brief.brief.answers.terrain, undefined);
 });
 
 test('confirmation rejects whitespace-only required text and leaves the draft intact', async () => {
