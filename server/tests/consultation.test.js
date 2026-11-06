@@ -13,6 +13,11 @@ test('shape and terrain are not questionnaire inputs; brief states its site assu
   expect(steps[0].questions.map((question) => question.key)).not.toContain('terrain');
   const brief = buildBrief(answers);
   expect(brief.assumptions).toContain('Single-storey concept assuming a flat, rectangular plot.');
+  for (const storeys of [2, 3]) {
+    const multiStoreyBrief = buildBrief({ ...answers, storeys });
+    expect(multiStoreyBrief.answers.storeys).toBe(storeys);
+    expect(multiStoreyBrief.assumptions).toContain(`${storeys}-storey concept assuming a flat, rectangular plot.`);
+  }
 });
 test('partial drafts allowed; unknown fields and invalid dimensions rejected', () => {
   expect(answerSchema.safeParse({ width: 20.5 }).success).toBe(true);

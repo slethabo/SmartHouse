@@ -54,7 +54,7 @@ function buildBrief(answers) {
   const visibleAnswers = Object.fromEntries(questions.filter((q) => active(q, clean) && clean[q.key] !== undefined).map((q) => [q.key, clean[q.key]]));
   return { questionnaireVersion: 1, answers: visibleAnswers, siteAreaM2: clean.width * clean.length,
     currency: 'ZAR', stage: 'concept_brief',
-    assumptions: [`${clean.storeys || 1}-storey concept assuming a flat, rectangular plot.`, 'Budget inclusions require clarification in the future cost model.', 'Boundary clearances and site services require professional review.'],
+    assumptions: [(clean.storeys || 1) === 1 ? 'Single-storey concept assuming a flat, rectangular plot.' : `${clean.storeys}-storey concept assuming a flat, rectangular plot.`, 'Budget inclusions require clarification in the future cost model.', 'Boundary clearances and site services require professional review.'],
     reviewNotes: [ ...(clean.access === 'Unknown' ? ['Road access direction is unknown.'] : []),
       'Additional essential features, accessibility, and future plans are recorded for review.', 'Validated architectural generation and pricing validation are not available in this release.' ] };
 }
