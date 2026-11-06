@@ -1,4 +1,5 @@
 import { roofPanels } from './architecture';
+import { constructionAllowance } from './costModel';
 
 /** Cost estimator (pure functions, no I/O). */
 /** Finish levels in ascending price order. */
@@ -219,13 +220,14 @@ function estimateHouseFromCatalogue(house, products, benchmarks) {
       assumption:'One switchback stair per floor connection; indicative structure and guarding allowance, not a quotation.'},
   ]:[];
   const structuralAllowanceSubtotal=structuralLines.reduce((sum,line)=>sum+line.total,0);
-  const constructionBase = estimateCost(area, finishRatePerM2);
+  const baseline = constructionAllowance(area, house.finish, benchmarks);
+  const constructionBase = baseline.constructionBase;
   const materialsAllocation = Math.round(constructionBase * materialsShare);
   const labour = Math.round(constructionBase * labourShare);
   const servicesAndSpecialistWork = constructionBase - materialsAllocation - labour;
   const otherMaterialsAndFinishes = Math.max(0, materialsAllocation - pricedMaterialsSubtotal);
-  const professionalFees = Math.round(constructionBase * professionalFeesShare);
-  const contingency = Math.round(constructionBase * contingencyShare);
+  const professionalFees = baseline.professionalFees;
+  const contingency = baseline.contingency;
   const materialOverrun = Math.max(0, pricedMaterialsSubtotal - materialsAllocation);
   const categories = [
     { key: 'materials', label: 'Materials and finishes', total: Math.max(pricedMaterialsSubtotal, materialsAllocation) },

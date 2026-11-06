@@ -12,7 +12,7 @@ export function BottomTabs() {
   return (
     <nav className="tabbar" aria-label="Main (mobile)">
       {items.map((item) => (
-        <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => `tabbar__item ${isActive || (item.to === '/' && location.pathname.startsWith('/projects')) ? 'is-active' : ''}`}>
+        <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => `tabbar__item ${isActive || (item.to === '/' && location.pathname.startsWith('/projects')) || (item.to === '/browse' && location.pathname.startsWith('/plans/')) ? 'is-active' : ''}`}>
           <Icon name={item.icon} size={22} />
           <span>{item.shortLabel || item.label}</span>
         </NavLink>

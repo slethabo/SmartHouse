@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { STRINGS, fill } from '../constants/strings';
 import { PageHeader } from '../components/layout/PageHeader';
@@ -20,6 +20,7 @@ export function BrowsePage() {
   const [params, setParams] = useSearchParams();
   const applied = useMemo(() => ({ ...EMPTY, ...Object.fromEntries(params.entries()) }), [params]);
   const [draft, setDraft] = useState(applied);
+  useEffect(() => { setDraft(applied); }, [applied]);
 
   const { data, loading, error, reload, setData } = useFetch(({ signal }) => plansService.browse(applied, { signal }), [params.toString()]);
   const items = data?.items || [];
@@ -46,9 +47,9 @@ export function BrowsePage() {
   return (
     <>
       <ProgressBar active={loading} />
-      <PageHeader title={STRINGS.browse.title} intro={STRINGS.browse.intro} />
+      <PageHeader title={STRINGS.browse.title} intro={STRINGS.browse.intro} eyebrow="FIND YOUR INSPIRATION" actions={<Button to="/" variant="secondary" icon="edit">Plan a home of your own</Button>} />
 
-      <form className="toolbar" onSubmit={apply} role="search" aria-label={STRINGS.browse.search}>
+      <form className="toolbar toolbar--library" onSubmit={apply} role="search" aria-label={STRINGS.browse.search}>
         <FormField
           className="field--grow"
           label={STRINGS.browse.search}
@@ -86,14 +87,14 @@ export function BrowsePage() {
           value={draft.maxArea}
           onChange={(e) => setDraft((d) => ({ ...d, maxArea: e.target.value }))}
         />
-        <Button type="submit" icon="search">
+        <div className="library-filter-actions"><span>Find a starting point for your next home.</span><Button type="submit" icon="search">
           {STRINGS.browse.apply}
         </Button>
         {(hasFilters || Object.values(draft).some(Boolean)) && (
           <Button variant="ghost" icon="x" onClick={clear}>
             {STRINGS.browse.clear}
           </Button>
-        )}
+        )}</div>
       </form>
 
       {error && (
@@ -114,7 +115,7 @@ export function BrowsePage() {
         </EmptyState>
       ) : (
         <>
-          <p className="text-muted text-sm" aria-live="polite">
+          <p className="library-results" aria-live="polite">
             {items.length === 1 ? STRINGS.browse.resultsOne : fill(STRINGS.browse.results, { count: items.length })}
           </p>
           <div className="grid grid--cards">

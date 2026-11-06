@@ -43,6 +43,7 @@ export function Button({
 
   return (
     <button
+      {...rest}
       type={type}
       className={classes}
       disabled={isDisabled}
@@ -50,7 +51,6 @@ export function Button({
       title={isDisabled && disabledReason ? disabledReason : rest.title}
       aria-description={isDisabled && disabledReason ? disabledReason : undefined}
       aria-busy={loading || undefined}
-      {...rest}
     >
       {content}
     </button>

@@ -1,9 +1,11 @@
 import questionnaire from '../demo/consultation.json';
 import { validateAnswers } from '../demo/validation';
 
-function fail(message, status = 400) {
+function fail(message, status = 400, fields = {}, code) {
   const error = new Error(message);
   error.status = status;
+  error.fields = fields;
+  error.code = code;
   throw error;
 }
 function abort(signal) { if (signal?.aborted) throw new DOMException('Aborted', 'AbortError'); }
@@ -21,7 +23,23 @@ async function unwrap(builder, signal) {
   if (code === 'PGRST116') fail('Project not found in this cloud workspace.', 404);
   if (['42P01', 'PGRST202', 'PGRST205', '42883'].includes(code)) fail('The SmartHouse database setup is incomplete. Run supabase/schema.sql once in your new Supabase project, then retry.', 503);
   if (code === '42501') fail('Your cloud session does not have access to this project. Check the installed RLS policies.', 403);
-  if (code === '22023' || code === '23514') fail('The saved answers could not be confirmed. Check required choices, plot dimensions, budget and room counts.', 400);
+  if (code === '22023' || code === '23514') {
+    const message = result.error.message || '';
+    const missing = message.match(/^Missing required answer: ([a-zA-Z]+)$/)?.[1];
+    if (['shape', 'terrain'].includes(missing)) {
+      fail('Your answers are saved and complete, but the confirmation service still expects questions that were removed. The app administrator needs to update it; you do not need to change your answers.', 503, {}, 'CONSULTATION_SCHEMA_OUTDATED');
+    }
+    const questions = questionnaire.steps.flatMap((step) => step.questions);
+    const field = missing || message.match(/^Expected number: ([a-zA-Z]+)$/)?.[1];
+    const question = questions.find((q) => q.key === field);
+    if (question) fail(`Check “${question.label}” before confirming.`, 400, { [field]: missing ? 'Please answer this question.' : 'Enter a valid number.' });
+    if (/^Storeys must be/.test(message)) fail('Choose one, two or three storeys.', 400, { storeys: 'Enter a whole number from 1 to 3.' });
+    let detail;
+    try { detail = JSON.parse(result.error.details || '{}'); } catch { /* Unknown database details are not shown to users. */ }
+    const fields = Object.fromEntries(Object.entries(detail?.fields || {}).filter(([key, value]) => questions.some((q) => q.key === key) && typeof value === 'string' && value.length <= 240));
+    if (Object.keys(fields).length) fail('Please correct the highlighted answers before confirming.', 400, fields);
+    fail('Your draft is saved. The confirmation service rejected answers that passed this form’s checks. Please retry; if it continues, the app administrator needs to check the consultation setup.', 503, {}, 'CONSULTATION_VALIDATOR_MISMATCH');
+  }
   fail('The cloud request could not be completed. Check your connection and try again.', 503);
 }
 

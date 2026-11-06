@@ -20,7 +20,7 @@ export function FormField({
   ...inputProps
 }) {
   const id = useId();
-  const hintId = hint ? `${id}-hint` : undefined;
+  const hintId = hint && !error ? `${id}-hint` : undefined;
   const errorId = error ? `${id}-error` : undefined;
   const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
 
@@ -75,7 +75,7 @@ export function FormField({
 export function PasswordField({ label, error, hint, ...inputProps }) {
   const [visible, setVisible] = useState(false);
   const id = useId();
-  const hintId = hint ? `${id}-hint` : undefined;
+  const hintId = hint && !error ? `${id}-hint` : undefined;
   const errorId = error ? `${id}-error` : undefined;
   const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
   return (

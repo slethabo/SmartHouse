@@ -1,5 +1,4 @@
 /* Prototype design workspace */
-:root { --color-bg: #f5f5f0; --color-primary: #285c46; --color-primary-hover: #1c4433; --color-primary-soft: #e2ebe1; --color-text: #202d26; --color-border: #dce1d8; --radius-md: 12px; }
 .topnav { box-shadow: none; background: #fcfcf9; }
 .topnav__brand { letter-spacing: -.6px; }
 .topnav__link { font-size: .875rem; }

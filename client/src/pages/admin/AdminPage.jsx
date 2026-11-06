@@ -19,7 +19,7 @@ export function AdminPage() {
 
   return (
     <>
-      <PageHeader title={STRINGS.admin.title} intro={STRINGS.admin.intro} />
+      <PageHeader title={STRINGS.admin.title} intro={STRINGS.admin.intro} eyebrow="WORKSPACE MANAGEMENT" />
       {cloudMode && <Banner>These demo controls manage the reference design library and rates stored in this browser.</Banner>}
 
       {stats && (
@@ -35,7 +35,12 @@ export function AdminPage() {
 
       <div className="tabs" role="tablist" aria-label="Admin sections">
         {TABS.map((t) => (
-          <button key={t} type="button" role="tab" id={`tab-${t}`} aria-selected={tab === t} aria-controls={`panel-${t}`} onClick={() => setParams({ tab: t })}>
+          <button key={t} type="button" role="tab" id={`tab-${t}`} tabIndex={tab === t ? 0 : -1} aria-selected={tab === t} aria-controls={`panel-${t}`} onKeyDown={(event) => {
+            const index = TABS.indexOf(t);
+            const next = event.key === 'ArrowRight' ? (index + 1) % TABS.length : event.key === 'ArrowLeft' ? (index + TABS.length - 1) % TABS.length : event.key === 'Home' ? 0 : event.key === 'End' ? TABS.length - 1 : -1;
+            if (next < 0) return;
+            event.preventDefault(); setParams({ tab: TABS[next] }); document.getElementById(`tab-${TABS[next]}`)?.focus();
+          }} onClick={() => setParams({ tab: t })}>
             {STRINGS.admin.tabs[t]}
           </button>
         ))}

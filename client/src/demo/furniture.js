@@ -3,6 +3,19 @@ export function placeFurniture(room) {
   const {x,y,width:w,depth:d,type}=room;
   const items=[];
   const add=(kind,dx,dy,width,depth,height=.75,color='#eee8dc')=>items.push({kind,x:x+dx,y:y+dy,width,depth,height,color});
+  if (room.compact && type === 'living') {
+    add('sofa', .2, 1, Math.min(2.2, w - .4), .8, .75, '#9caa8b');
+    add('coffee-table', .5, 2.2, 1, .5, .4, '#8f694b');
+    add('dining-table', w - 1.2, .15, 1, .65, .75, '#8f694b');
+    return items;
+  }
+  if (room.compact && type === 'kitchen') { add('kitchen-counter', .15, d - .65, w - .3, .5, .9, '#c3b59f'); return items; }
+  if (room.compact && type === 'bathroom') {
+    add('shower', .1, d - .9, .8, .8, .08, '#ffffff');
+    add('toilet', w - .65, .1, .45, .65, .45, '#ffffff');
+    add('vanity', .1, .1, .55, .45, .8, '#ffffff');
+    return items;
+  }
   if (type==='bedroom') {
     add('bed',.3,.95,1.5,2,.5,'#f9f5e9');
     add('wardrobe',w-.65,.85,.5,Math.min(1.5,d-1.2),1.9,'#bca88d');

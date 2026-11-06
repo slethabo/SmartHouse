@@ -8,6 +8,7 @@ import { FormField, PasswordField } from '../components/ui/FormField';
 import { Button } from '../components/ui/Button';
 import { Banner } from '../components/ui/Banner';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { AuthLayout } from '../components/layout/AuthLayout';
 
 export function RegisterPage() {
   useDocumentTitle(STRINGS.auth.registerTitle);
@@ -47,7 +48,7 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="auth-page">
+    <AuthLayout>
       <div className="card auth-card">
         <h1>{STRINGS.auth.registerTitle}</h1>
         <p>{STRINGS.auth.registerIntro}</p>
@@ -99,6 +100,6 @@ export function RegisterPage() {
           {STRINGS.auth.haveAccount} <Link to="/login">{STRINGS.nav.login}</Link>
         </p>
       </div>
-    </div>
+    </AuthLayout>
   );
 }

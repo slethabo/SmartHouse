@@ -31,14 +31,14 @@ export function TopNav({ onOpenHelp }) {
     <header className="topnav">
       <div className="topnav__inner">
         <Link to="/" className="topnav__brand" aria-label={`${STRINGS.app.name} home`}>
-          <Icon name="house" size={28} />
+          <span className="topnav__brand-mark"><Icon name="house" size={25} /></span>
           <span>{STRINGS.app.name}</span>
         </Link>
 
         {user && (
           <nav className="topnav__links" aria-label="Main">
             {items.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => `topnav__link ${isActive || (item.to === '/' && location.pathname.startsWith('/projects')) ? 'is-active' : ''}`}>
+              <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => `topnav__link ${isActive || (item.to === '/' && location.pathname.startsWith('/projects')) || (item.to === '/browse' && location.pathname.startsWith('/plans/')) ? 'is-active' : ''}`}>
                 {item.label}
               </NavLink>
             ))}
@@ -54,11 +54,11 @@ export function TopNav({ onOpenHelp }) {
               {STRINGS.app.help}
             </span>
           </Button>
-          <span className="badge badge--info">{cloudMode ? 'Cloud projects' : 'Local prototype'}</span>
+          {user && <span className="topnav__identity" title={user.full_name || 'Your workspace'}><span className="topnav__avatar" aria-hidden="true">{(user.full_name || 'Your workspace').trim().split(/\s+/).slice(0, 2).map((name) => name[0]).join('')}</span><span>{cloudMode ? (user.full_name?.split(' ')[0] || 'My account') : 'Demo workspace'}</span></span>}
           {cloudMode && (user ? <Button variant="secondary" size="sm" loading={loggingOut} onClick={signOut}>{STRINGS.app.logout}</Button> : <>{location.pathname !== '/login' && <Button to="/login" variant="ghost" size="sm">Log in</Button>}{location.pathname !== '/register' && <Button to="/register" size="sm">Create account</Button>}</>)}
-          {logoutError && <span role="alert">{logoutError}</span>}
         </div>
       </div>
+      {logoutError && <div className="topnav__error" role="alert">{logoutError}</div>}
     </header>
   );
 }

@@ -7,12 +7,13 @@ import { FormField, PasswordField } from '../components/ui/FormField';
 import { Button } from '../components/ui/Button';
 import { Banner } from '../components/ui/Banner';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { AuthLayout } from '../components/layout/AuthLayout';
 
 export function AuthCallbackPage() {
   useDocumentTitle('Confirm your account');
   const { user } = useAuth();
   if (user) return <Navigate to="/" replace />;
-  return <div className="auth-page"><section className="card auth-card"><h1>Confirm your account</h1><Banner>The confirmation link is missing or has expired. Try logging in if your email is already confirmed, or request another link from the account page.</Banner><Link to="/login">Log in</Link> · <Link to="/register">Create account</Link></section></div>;
+  return <AuthLayout><section className="card auth-card"><h1>Confirm your account</h1><Banner>The confirmation link is missing or has expired. Try logging in if your email is already confirmed, or request another link from the login page.</Banner><div className="auth-link-row"><Button to="/login">Log in</Button><Button variant="secondary" to="/register">Create account</Button></div></section></AuthLayout>;
 }
 
 export function ForgotPasswordPage() {
@@ -30,10 +31,10 @@ export function ForgotPasswordPage() {
     catch (e) { setError(e.message); }
     finally { setBusy(false); }
   }
-  return <div className="auth-page"><section className="card auth-card"><h1>Reset your password</h1><p>Enter your account email to receive a reset link.</p>
+  return <AuthLayout><section className="card auth-card"><h1>Reset your password</h1><p>Enter your account email to receive a reset link.</p>
     {error && <Banner type="error">{error}</Banner>}{message && <Banner type="success">{message}</Banner>}
     <form className="form mt-4" onSubmit={submit} noValidate><FormField label="Email address" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required /><Button type="submit" block loading={busy}>Send reset link</Button></form><p><Link to="/login">Back to login</Link></p>
-  </section></div>;
+  </section></AuthLayout>;
 }
 
 export function ResetPasswordPage() {
@@ -53,10 +54,10 @@ export function ResetPasswordPage() {
     catch (e) { setError(e.message); }
     finally { setBusy(false); }
   }
-  if (!user) return <div className="auth-page"><section className="card auth-card"><h1>Open your password reset email</h1><Banner>Use the latest link in your inbox. If it has expired, request another one.</Banner><Link to="/forgot-password">Request a reset link</Link></section></div>;
-  return <div className="auth-page"><section className="card auth-card"><h1>Choose a new password</h1><p>Use at least 8 characters, including a letter and a number.</p>{error && <Banner type="error">{error}</Banner>}<form className="form mt-4" onSubmit={submit} noValidate>
+  if (!user) return <AuthLayout><section className="card auth-card"><h1>Open your password reset email</h1><Banner>Use the latest link in your inbox. If it has expired, request another one.</Banner><Link to="/forgot-password">Request a reset link</Link></section></AuthLayout>;
+  return <AuthLayout><section className="card auth-card"><h1>Choose a new password</h1><p>Use at least 8 characters, including a letter and a number.</p>{error && <Banner type="error">{error}</Banner>}<form className="form mt-4" onSubmit={submit} noValidate>
     <PasswordField label="New password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
     <PasswordField label="Confirm password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
     <Button type="submit" block loading={busy}>Save password</Button>
-  </form></section></div>;
+  </form></section></AuthLayout>;
 }

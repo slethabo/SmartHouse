@@ -26,7 +26,7 @@ export function SavedPlansPage() {
   return (
     <>
       <ProgressBar active={loading} />
-      <PageHeader title={STRINGS.saved.title} intro={STRINGS.saved.intro} />
+      <PageHeader title={STRINGS.saved.title} intro={STRINGS.saved.intro} eyebrow="YOUR COLLECTION" actions={<Button to="/browse" variant="secondary" icon="plus">Explore more designs</Button>} />
 
       {error && (
         <div className="mb-4">

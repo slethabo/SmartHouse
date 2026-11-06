@@ -59,17 +59,18 @@ export function ProjectsPage() {
     finally { setBusy(false); }
   }
   return <div className="studio">
-    <section className="studio-welcome studio-welcome--compact">
+    <section className="studio-welcome studio-welcome--compact projects-hero">
       <div><span className="studio-eyebrow">YOUR HOME, YOUR WAY</span><h1>Your home projects.</h1><p>From your first ideas to a house concept. Tell us about your land, your budget, and the way you live.</p>
-        <div className="studio-journey"><span><Icon name="edit" /> Share your brief</span><span><Icon name="layers" /> Explore a concept</span><span><Icon name="coins" /> See the estimate</span></div>
+        <div className="studio-journey"><span><b>01</b> Share your brief</span><span><b>02</b> Explore your concept</span><span><b>03</b> Understand the cost</span></div>
       </div>
+      <div className="projects-hero__aside"><Icon name="layers" size={26} /><span>FROM THE FIRST IDEA</span><strong>A place to imagine<br />what comes next.</strong><p>Your brief, plans and house concept, together in one workspace.</p></div>
 
     </section>
     {error && <><Notice>{error}</Notice><Button variant="secondary" onClick={() => setRetry((n) => n + 1)}>Try again</Button></>}
     <div className="studio-dashboard">
       <section className="studio-panel studio-create"><span className="studio-eyebrow">START SOMETHING NEW</span><h2>Let us plan your home.</h2><p>A short consultation helps us understand what matters to you. You can save your progress at any time.</p><form onSubmit={create}><FormField label="Project name" placeholder="e.g. Our family home" value={title} onChange={(e) => setTitle(e.target.value)} required maxLength={120} /><Button type="submit" loading={busy} disabled={!title.trim()} icon="arrowRight" block>Start my consultation</Button></form><small><Icon name="info" size={14} /> {cloudMode ? 'Projects and briefs are saved to your account. Log in on another device to continue.' : 'Local demo: projects are saved in this browser.'}</small></section>
       <section className="studio-projects"><div className="studio-section-title"><h2>Your projects</h2><span className="studio-count">{projects.length}</span></div>
-        {loading ? <div className="studio-empty" role="status"><Icon name="refresh" size={28} /><p>Loading your projects...</p></div> : projects.length ? <div className="studio-project-list">{projects.map((p) => <Link className="studio-project" key={p.id} to={`/projects/${p.id}`}><span className="studio-project-icon"><Icon name="house" size={24} /></span><span><strong>{p.title}</strong><small>Created {new Date(p.created_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })} / Continue consultation</small></span><Icon name="arrowRight" /></Link>)}</div> : <div className="studio-empty"><Icon name="house" size={32} /><h3>Your next chapter starts here.</h3><p>Name your project to begin. Your saved consultations will appear here.</p></div>}
+        {loading ? <div className="studio-empty" role="status"><Icon name="refresh" size={28} /><p>Loading your projects...</p></div> : projects.length ? <div className="studio-project-list">{projects.map((p) => <Link className="studio-project" key={p.id} to={`/projects/${p.id}`}><span className="studio-project-icon"><Icon name="house" size={24} /></span><span><strong>{p.title}</strong><small>Created {new Date(p.created_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })} / Open workspace</small></span><Icon name="arrowRight" /></Link>)}</div> : <div className="studio-empty"><Icon name="house" size={32} /><h3>Your next chapter starts here.</h3><p>Name your project to begin. Your saved consultations will appear here.</p></div>}
       </section>
     </div>
   </div>;

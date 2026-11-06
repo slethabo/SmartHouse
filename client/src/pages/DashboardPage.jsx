@@ -38,7 +38,7 @@ export function DashboardPage() {
       <section className="card" style={{ marginBottom: 24 }}><h2>Design a home around your life</h2><p>Start an architectural consultation, save your requirements, and explore a personalised schematic concept.</p><Button to="/projects">Start your house project</Button></section>
       <div className="hero">
         <div className="hero__intro">
-          <h1 style={{ marginTop: 0 }}>{STRINGS.dashboard.heading}</h1>
+          <h2 style={{ marginTop: 0 }}>{STRINGS.dashboard.heading}</h2>
           <p>{STRINGS.dashboard.intro}</p>
           <ol className="hero__steps">
             {STRINGS.dashboard.steps.map((step, i) => (

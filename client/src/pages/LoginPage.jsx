@@ -10,6 +10,7 @@ import { Banner } from '../components/ui/Banner';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { safeReturnPath } from '../services/supabaseAuth';
 import { authService } from '../services/auth.service';
+import { AuthLayout } from '../components/layout/AuthLayout';
 
 export function LoginPage() {
   useDocumentTitle(STRINGS.auth.loginTitle);
@@ -57,7 +58,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="auth-page">
+    <AuthLayout>
       <div className="card auth-card">
         <h1>{STRINGS.auth.loginTitle}</h1>
         <p>{STRINGS.auth.loginIntro}</p>
@@ -87,12 +88,11 @@ export function LoginPage() {
             {submitting ? STRINGS.auth.loggingIn : STRINGS.auth.loginButton}
           </Button>
         </form>
-        <p><Link to="/forgot-password">Forgot your password?</Link></p>
-        <Button variant="ghost" size="sm" disabled={submitting} onClick={resend}>Resend confirmation email</Button>
+        <div className="auth-support"><Link to="/forgot-password">Forgot your password?</Link><details><summary>Waiting for your confirmation email?</summary><p>Enter your email above, then request a new link.</p><Button variant="secondary" size="sm" disabled={submitting} onClick={resend}>Resend confirmation email</Button></details></div>
         <p className="auth-switch">
           {STRINGS.auth.noAccount} <Link to="/register">{STRINGS.nav.register}</Link>
         </p>
       </div>
-    </div>
+    </AuthLayout>
   );
 }

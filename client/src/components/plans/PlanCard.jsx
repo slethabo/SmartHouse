@@ -25,6 +25,7 @@ export function PlanCard({ plan, cost, match, saved, onToggleSave, saving = fals
         )}
       </div>
       <div className="plan-card__body">
+        <span className="plan-card__style">{plan.style} collection</span>
         <h3 className="plan-card__title" id={`plan-${plan.id}-title`}>
           <Link to={detailTo} state={detailState}>
             {plan.name}
@@ -42,9 +43,6 @@ export function PlanCard({ plan, cost, match, saved, onToggleSave, saving = fals
           </li>
           <li>
             <Icon name="ruler" size={16} /> {formatArea(plan.floor_area_m2)}
-          </li>
-          <li>
-            <Icon name="tag" size={16} /> {plan.style}
           </li>
         </ul>
         {cost && (

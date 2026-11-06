@@ -4,13 +4,14 @@ import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 /**
  * Page title + breadcrumbs + primary actions, identical on every page.
  */
-export function PageHeader({ title, intro, breadcrumbs = [], actions }) {
+export function PageHeader({ title, intro, breadcrumbs = [], actions, eyebrow = 'THE SMART HOUSE STUDIO' }) {
   useDocumentTitle(title);
   return (
     <>
       <Breadcrumbs items={[...breadcrumbs, { label: title }]} />
       <header className="page-header">
         <div>
+          <span className="studio-eyebrow">{eyebrow}</span>
           <h1>{title}</h1>
           {intro && <p>{intro}</p>}
         </div>

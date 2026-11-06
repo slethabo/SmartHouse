@@ -103,7 +103,7 @@ export function HouseConceptPage({ brief }) {
       <section className="hc-gallery" aria-label="Your house gallery">
         <div className="hc-gallery-stage" id={`${id}-gallery`}>
           <div className="hc-gallery-label"><span>{a.style} / {house.storeys||1} {(house.storeys||1)>1?'storeys':'storey'}</span><span>Schematic concept</span></div>
-          {house.floors&&<div className="hc-floor-tabs" role="group" aria-label="Choose floor plan">{house.floors.map(f=><button type="button" key={f.id} aria-pressed={activeFloor.id===f.id} onClick={()=>setSelectedFloor(f.id)}>{f.name} <small>{f.area.toFixed(1)} m²</small></button>)}</div>}
+          {house.floors && (view === 'plan' || view === 'inside') && <div className="hc-floor-tabs" role="group" aria-label="Choose floor plan">{house.floors.map(f=><button type="button" key={f.id} aria-pressed={activeFloor.id===f.id} onClick={()=>setSelectedFloor(f.id)}>{f.name} <small>{f.area.toFixed(1)} m²</small></button>)}</div>}
           <div className={`hc-gallery-art hc-gallery-art--${view}`}>
             {view === 'inside' && <HousePreview house={house} floorId={activeFloor?.id} roofVisible={false} />}
             {/* Keep the SVG mounted so downloads work from every gallery view. */}
@@ -133,32 +133,7 @@ export function HouseConceptPage({ brief }) {
         </dl>
         <div className="hc-price"><span>ILLUSTRATIVE CONSTRUCTION ESTIMATE</span><strong>{estimate ? money(estimate.total) : priceDataState.error ? 'Estimate unavailable' : 'Loading material prices…'}</strong>
           <small>Includes materials, finishes, labour, services, professional fees and contingency using conservative South African benchmarks.</small>
-          <details className="hc-accordion hc-cost-disclosure" id={`${id}-cost-breakdown`}>
-            <summary>View detailed price breakdown</summary>
-            {priceDataState.error && <p className="hc-download-error" role="alert">{priceDataState.error}</p>}
-            {!estimate && !priceDataState.error && <p role="status">Loading the catalogue and material price benchmarks…</p>}
-            {estimate && <>
-              <dl className="hc-cost-lines">{estimate.lines.filter((line) => line.quantity > 0).map((line) => <div key={line.key}>
-                <dt>{line.label}<small>{line.priced
-                  ? <>{line.sourceType === 'catalogue'
-                    ? `${line.productName} · ${line.quantity.toLocaleString('en-ZA')} × ${preciseMoney(line.unitPrice)} per ${line.unit} · SKU ${line.sku}`
-                    : `${line.quantity.toLocaleString('en-ZA')} × ${preciseMoney(line.unitPrice)} per ${line.unit} · ${line.sourceSummary}`}
-                    {' · '}{line.assumption}
-                    {line.sources?.length > 0 && <> Sources: {line.sources.map((source, index) => <span key={source.url}>{index > 0 ? ', ' : ' '}<a href={source.url} target="_blank" rel="noopener noreferrer">{source.name} ({source.priceLabel})</a></span>)}</>}
-                  </>
-                  : line.note}</small></dt><dd>{line.priced ? money(line.total) : 'Not priced'}</dd>
-              </div>)}
-                <div><dt>Priced material lines (included below)</dt><dd>{money(estimate.pricedMaterialsSubtotal)}</dd></div>
-                <div><dt>Other materials and finishes allowance</dt><dd>{money(estimate.otherMaterialsAndFinishes)}</dd></div>
-                {estimate.materialOverrun > 0 && <div><dt>Priced materials above base materials allocation</dt><dd>{money(estimate.materialOverrun)}</dd></div>}
-                {estimate.structuralAllowanceSubtotal > 0 && <div><dt>Stairs and upper-level structural allowances</dt><dd>{money(estimate.structuralAllowanceSubtotal)}</dd></div>}
-                {estimate.categories.map((category) => <div key={category.key}><dt>{category.label}</dt><dd>{money(category.total)}</dd></div>)}
-                <div className="hc-cost-total"><dt>Estimated construction total</dt><dd>{money(estimate.total)}</dd></div></dl>
-              <p className="hc-fine-print">{estimate.pricingNote}</p>
-              <p className="hc-fine-print">The priced-material subtotal and other-materials allowance are details within the Materials and finishes category; only the category rows are added to the total.</p>
-              <p className="hc-fine-print">Construction-rate sources: {estimate.constructionSources.map((source, index) => <span key={`${source.url}-${index}`}>{index > 0 ? ', ' : ''}<a href={source.url} target="_blank" rel="noopener noreferrer">{source.name} ({source.priceLabel})</a></span>)}</p>
-            </>}
-          </details>
+          <a className="hc-price-breakdown-link" href={`#${id}-costs`}>View detailed price breakdown <Icon name="arrowRight" size={16} /></a>
         </div>
         {estimate
           ? <div className={`hc-budget ${withinBudget ? '' : 'hc-budget--over'}`}>
@@ -220,6 +195,32 @@ export function HouseConceptPage({ brief }) {
           ? `The estimated total of ${money(estimate.total)} includes the selected ${a.finish.toLowerCase()} finish level, catalogue and researched materials, plus allowances for other materials, labour, services, professional fees and contingency.`
           : priceDataState.error || 'Loading catalogue and researched material prices to calculate the estimate.'}</p>
         <p className="hc-fine-print">{estimate?.pricingNote || 'The illustrative estimate uses local catalogue prices and researched material benchmarks when available; the detailed breakdown is loading.'}</p>
+          <details className="hc-accordion hc-cost-disclosure" id={`${id}-cost-breakdown`}>
+            <summary>View detailed price breakdown</summary>
+            {priceDataState.error && <p className="hc-download-error" role="alert">{priceDataState.error}</p>}
+            {!estimate && !priceDataState.error && <p role="status">Loading the catalogue and material price benchmarks…</p>}
+            {estimate && <>
+              <dl className="hc-cost-lines">{estimate.lines.filter((line) => line.quantity > 0).map((line) => <div key={line.key}>
+                <dt>{line.label}<small>{line.priced
+                  ? <>{line.sourceType === 'catalogue'
+                    ? `${line.productName} · ${line.quantity.toLocaleString('en-ZA')} × ${preciseMoney(line.unitPrice)} per ${line.unit} · SKU ${line.sku}`
+                    : `${line.quantity.toLocaleString('en-ZA')} × ${preciseMoney(line.unitPrice)} per ${line.unit} · ${line.sourceSummary}`}
+                    {' · '}{line.assumption}
+                    {line.sources?.length > 0 && <> Sources: {line.sources.map((source, index) => <span key={source.url}>{index > 0 ? ', ' : ' '}<a href={source.url} target="_blank" rel="noopener noreferrer">{source.name} ({source.priceLabel})</a></span>)}</>}
+                  </>
+                  : line.note}</small></dt><dd>{line.priced ? money(line.total) : 'Not priced'}</dd>
+              </div>)}
+                <div><dt>Priced material lines (included below)</dt><dd>{money(estimate.pricedMaterialsSubtotal)}</dd></div>
+                <div><dt>Other materials and finishes allowance</dt><dd>{money(estimate.otherMaterialsAndFinishes)}</dd></div>
+                {estimate.materialOverrun > 0 && <div><dt>Priced materials above base materials allocation</dt><dd>{money(estimate.materialOverrun)}</dd></div>}
+                {estimate.structuralAllowanceSubtotal > 0 && <div><dt>Stairs and upper-level structural allowances</dt><dd>{money(estimate.structuralAllowanceSubtotal)}</dd></div>}
+                {estimate.categories.map((category) => <div key={category.key}><dt>{category.label}</dt><dd>{money(category.total)}</dd></div>)}
+                <div className="hc-cost-total"><dt>Estimated construction total</dt><dd>{money(estimate.total)}</dd></div></dl>
+              <p className="hc-fine-print">{estimate.pricingNote}</p>
+              <p className="hc-fine-print">The priced-material subtotal and other-materials allowance are details within the Materials and finishes category; only the category rows are added to the total.</p>
+              <p className="hc-fine-print">Construction-rate sources: {estimate.constructionSources.map((source, index) => <span key={`${source.url}-${index}`}>{index > 0 ? ', ' : ''}<a href={source.url} target="_blank" rel="noopener noreferrer">{source.name} ({source.priceLabel})</a></span>)}</p>
+            </>}
+          </details>
         <details className="hc-accordion"><summary>Your stated budget inclusions</summary><p>{formatConsultationAnswer(a.budgetIncludes)}</p><p className="hc-fine-print">Recorded from your brief; these inclusions do not automatically change the quantities in the estimate.</p></details>
       </section>
 

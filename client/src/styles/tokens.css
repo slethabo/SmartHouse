@@ -1,19 +1,18 @@
-/* Design tokens: one source of truth for colour, spacing, type and radius.
-   Colours meet WCAG AA (≥ 4.5:1) for text on their intended backgrounds. */
+/* Shared visual language. Validate contrast in context when introducing variants. */
 :root {
-  --color-bg: #f6f8f7;
+  --color-bg: #f7f7f2;
   --color-surface: #ffffff;
-  --color-surface-muted: #eef2f0;
-  --color-border: #d5dcd9;
-  --color-border-strong: #a7b3ae;
+  --color-surface-muted: #eff1e9;
+  --color-border: #dce1d6;
+  --color-border-strong: #a7b4a7;
 
-  --color-text: #15221e;
-  --color-text-muted: #4b5a55;
-  --color-text-subtle: #66736e;
+  --color-text: #203b30;
+  --color-text-muted: #536158;
+  --color-text-subtle: #626f63;
 
-  --color-primary: #0f766e;        /* teal-700: 5.5:1 on white */
-  --color-primary-hover: #0b5f59;
-  --color-primary-soft: #d9f0ec;
+  --color-primary: #285c46;
+  --color-primary-hover: #1c4433;
+  --color-primary-soft: #e5eddf;
   --color-on-primary: #ffffff;
 
   --color-accent: #b45309;         /* amber-700: 5.3:1 on white */
@@ -32,6 +31,7 @@
   --color-focus: #2563eb;
 
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: Georgia, 'Times New Roman', serif;
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-md: 1rem;
@@ -50,7 +50,7 @@
   --space-8: 4rem;
 
   --radius-sm: 6px;
-  --radius-md: 10px;
+  --radius-md: 12px;
   --radius-lg: 16px;
   --radius-pill: 999px;
 
@@ -58,9 +58,9 @@
   --shadow-md: 0 4px 14px rgba(21, 34, 30, 0.08);
   --shadow-lg: 0 16px 40px rgba(21, 34, 30, 0.16);
 
-  --nav-height: 64px;
-  --tabbar-height: 64px;
-  --content-max: 1200px;
+  --nav-height: 76px;
+  --tabbar-height: 68px;
+  --content-max: 1320px;
 
   --transition: 160ms ease;
 }
