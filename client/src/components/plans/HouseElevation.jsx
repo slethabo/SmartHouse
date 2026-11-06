@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { exteriorHeight } from '../../demo/architecture';
+import { exteriorWallProfile } from '../../demo/architecture';
 
 /** Orthographic projection of exposed facade segments, including recessed entrances. */
 export function HouseElevation({house:h,side=false}) {
@@ -15,13 +15,15 @@ export function HouseElevation({house:h,side=false}) {
     <ellipse cx="450" cy="360" rx="400" ry="17" fill="#7e8d78" opacity=".18"/>
     {facades.map((w,i)=>{
       const endX=w.x+(w.axis==='x'?w.length:0),endY=w.y+(w.axis==='y'?w.length:0),x=coordinate(w.x,w.y),end=coordinate(endX,endY);
-      const top=ground-exteriorHeight(h,w)*scale,topEnd=ground-exteriorHeight(h,w,endX)*scale;
+      const profile=exteriorWallProfile(h,w);
+      const top=ground-profile[0].height*scale,topEnd=ground-profile[profile.length-1].height*scale;
+      const roofLine=profile.map(p=>`${x+p.offset*scale},${ground-p.height*scale}`).join(' ');
       const room=h.rooms.find(r=>r.id===w.roomId),accent=['service','garage'].includes(room.zone);
       const openings=[...h.windows,...h.doors.filter(d=>d.entrance||d.garage)].filter(o=>o.axis===w.axis&&Math.abs((o.axis==='x'?o.y:o.x)-(w.axis==='x'?w.y:w.x))<.001&&(o.axis==='x'?o.x>=w.x-.001&&o.x+o.length<=w.x+w.length+.001:o.y>=w.y-.001&&o.y+o.length<=w.y+w.length+.001));
       return <g key={i}>
-        <polygon points={`${x},${ground} ${end},${ground} ${end},${topEnd} ${x},${top}`} fill={accent?'#c6b9a1':'#f2eee4'} stroke="#a29e90" strokeWidth="1"/>
+        <polygon points={`${x},${ground} ${end},${ground} ${profile.slice().reverse().map(p=>`${x+p.offset*scale},${ground-p.height*scale}`).join(' ')}`} fill={accent?'#c6b9a1':'#f2eee4'} stroke="#a29e90" strokeWidth="1"/>
         {accent&&Array.from({length:Math.floor(w.length/.22)},(_,j)=><path key={j} d={`M${x+(j+.5)*.22*scale} ${Math.max(top,topEnd)+8}V${ground}`} stroke="#9e8d72" strokeOpacity=".25"/>)}
-        <path d={`M${x-3} ${top-4}L${end+3} ${topEnd-4}`} stroke={h.style==='Traditional'?'#805e4f':'#44534e'} strokeWidth="8"/>
+        <polyline points={roofLine} fill="none" stroke={h.style==='Traditional'?'#805e4f':'#44534e'} strokeWidth="8"/>
         <rect x={x} y={ground-7} width={end-x} height="7" fill="#6d7569" opacity=".3"/>
         {openings.map((o,j)=>{
           const ox=coordinate(o.x,o.y),isWindow=Boolean(o.roomId),height=isWindow?1.15:o.garage?2.4:2.15,oy=ground-(isWindow?2:height)*scale,ow=o.length*scale;

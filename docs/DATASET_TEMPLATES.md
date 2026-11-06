@@ -140,7 +140,7 @@ architectural concepts rather than certified construction drawings.
 ## Integration and versioning
 
 Generated objects use `schemaVersion: 5` and
-`generatorVersion: 'source-plans-v4-roof-sections'`. Keep the entire generated object,
+`generatorVersion: 'source-plans-v5-joined-roofs'`. Keep the entire generated object,
 including `walls`, opening edges, `privateTo`, source metadata, selected features,
 space profile, roof form, and alternatives, when saving a concept snapshot. The Supabase
 schema's geometry JSONB supports these additions; no SQL reset is required.
@@ -172,3 +172,27 @@ additional spaces, and confirm again. The result page shows the adapted plan and
 its source image separately. To grow the collection, visually review a new source,
 record its source regions, implement/validate its spatial recipe, run preparation,
 and add it to the matrix tests before presenting it as a supported family.
+
+
+## Joined-roof correction
+
+Roof planes are now clipped to their upper visible envelope. Overlapping faces
+are removed at intersection lines, coplanar faces have deterministic ownership,
+and standing seams/tile courses stay inside the trimmed patches. Outer eaves and
+stepped junctions receive closure faces. This is concept geometry, not a solution
+for structural framing, flashing or drainage.
+
+Exterior walls follow piecewise roof profiles at their actual coordinates,
+including ridges, valleys and vertical steps. Full gable walls are no longer
+added at every rectangular partition end. SVG elevations and perspective views
+use the same wall profiles as the Three.js model. Polygon-aware roof-area costing
+supports triangles and clipped convex polygons, including Multi-hip roofs.
+
+The displayed area is labelled enclosed room area: it sums room rectangles and
+circulation, excludes wall thickness and terraces, and is an approximate pricing
+basis. An over-budget concept is explicitly labelled as failing the stated budget;
+requested rooms remain intact so users can revise the brief deliberately.
+
+Regression coverage includes six-bedroom cases for all three families and both
+roof forms: no positive-area roof overlap, sampled coverage without gaps, wall
+profiles below the roof over their full length, and finite material estimates.

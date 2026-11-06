@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { placeFurniture } from './furniture';
-import { roofPanels, roofSections, exteriorHeight, roofHeight } from './architecture';
+import { roofPanels, roofSections, exteriorWallProfile, roofDetailSegments, roofEdgeFaces } from './architecture';
 
 /** Build real meshes from the shared floor-plan geometry. No network assets. */
 export function buildHouseModel(h) {
@@ -33,10 +33,12 @@ export function buildHouseModel(h) {
     mesh.name=name; mesh.castShadow=true; mesh.receiveShadow=true; group.add(mesh);
     return mesh;
   }
-  function wall(group, x, z, length, axis, openings = [], heights = [2.8,2.8]) {
+  function wall(group, x, z, length, axis, openings = [], profile = [{offset:0,height:2.8},{offset:length,height:2.8}]) {
     if (length <= .01) return;
     const shape = new THREE.Shape();
-    shape.moveTo(0, 0); shape.lineTo(length, 0); shape.lineTo(length, heights[1]); shape.lineTo(0, heights[0]); shape.closePath();
+    shape.moveTo(0, 0); shape.lineTo(length, 0);
+    for(const p of [...profile].reverse())shape.lineTo(p.offset,p.height);
+    shape.closePath();
     for (const o of openings) {
       const start = Math.max(.001, o.start), end = Math.min(length - .001, o.start + o.length);
       if (end <= start) continue;
@@ -45,7 +47,7 @@ export function buildHouseModel(h) {
       shape.holes.push(hole);
     }
     const mesh = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: .16, bevelEnabled: false }), wallMaterial);
-    mesh.name = 'wall'; mesh.userData = { axis, length, openings };
+    mesh.name = 'wall'; mesh.userData = { axis, length, openings, profile, planX:x, planY:z };
     if (axis === 'x') mesh.position.set(x, 0, z - .08);
     else { mesh.rotation.y = -Math.PI / 2; mesh.position.set(x + .08, 0, z); }
     mesh.castShadow = true; mesh.receiveShadow = true; group.add(mesh);
@@ -58,41 +60,8 @@ export function buildHouseModel(h) {
       ...h.windows.filter(sameLine).map((w) => ({ start: (axis === 'x' ? w.x : w.y) - start, length: w.length, bottom: .85, top: 2 })),
       ...h.doors.filter(sameLine).map((d) => ({ start: (axis === 'x' ? d.x : d.y) - start, length: d.length, bottom: .001, top: d.garage ? 2.4 : 2.15 })),
     ].filter((o) => o.start < segment.length && o.start + o.length > 0);
-    wall(segment.exterior ? exterior : interior, segment.x, segment.y, segment.length, axis === 'x' ? 'x' : 'z', openings, segment.exterior ? [exteriorHeight(h,segment),exteriorHeight(h,segment,segment.x+(axis==='x'?segment.length:0))] : [2.8,2.8]);
-    if(!segment.exterior&&segment.roomIds.length===2){
-      const pair=segment.roomIds.map(id=>h.rooms.find(r=>r.id===id));
-      const heights=pair.map(r=>roofHeight(h,r,segment.x,segment.y)-.16).sort((a,b)=>a-b);
-      if(heights[1]-heights[0]>.05){
-        const step=box(exterior,segment.x-(axis==='x'?0:.04),heights[0],segment.y-(axis==='x'?.04:0),axis==='x'?segment.length:.08,
-          heights[1]-heights[0],axis==='x'?.08:segment.length,glass,'clerestory');
-        step.userData.roomIds=segment.roomIds;
-      }
-    }
-  }
-  const houseRoofSections = roofSections(h);
-  for (const section of houseRoofSections.filter((item) => item.form === 'Intersecting gables')) {
-    const { x0, x1, y0, y1 } = section.buildingBounds;
-    const midX = (x0 + x1) / 2, midY = (y0 + y1) / 2;
-    const triangleAtX = (x) => [[x,2.78,y0],[x,2.78,y1],[x,section.ridgeHeight,midY]];
-    const triangleAtY = (y) => [[x0,2.78,y],[x1,2.78,y],[midX,section.ridgeHeight,y]];
-    const ends = section.ridgeAxis === 'x'
-      ? [
-        { axis: 'x', coordinate: x0, start: y0, end: y1, faces: [triangleAtX(x0),triangleAtX(x0-.08)] },
-        { axis: 'x', coordinate: x1, start: y0, end: y1, faces: [triangleAtX(x1),triangleAtX(x1+.08)] },
-      ]
-      : [
-        { axis: 'y', coordinate: y0, start: x0, end: x1, faces: [triangleAtY(y0),triangleAtY(y0-.08)] },
-        { axis: 'y', coordinate: y1, start: x0, end: x1, faces: [triangleAtY(y1),triangleAtY(y1+.08)] },
-      ];
-    for (const { faces } of ends) {
-      const [front,back] = faces;
-      polygon(exterior,front,wallMaterial,'gable-end');
-      polygon(exterior,[...back].reverse(),wallMaterial,'gable-end');
-      for (let index=0;index<front.length;index++) {
-        const next=(index+1)%front.length;
-        polygon(exterior,[front[index],front[next],back[next],back[index]],wallMaterial,'gable-return');
-      }
-    }
+    wall(segment.exterior ? exterior : interior, segment.x, segment.y, segment.length, axis === 'x' ? 'x' : 'z', openings,
+      segment.exterior ? exteriorWallProfile(h,segment) : undefined);
   }
   for (const w of h.windows) {
     const x = w.x;
@@ -139,29 +108,14 @@ export function buildHouseModel(h) {
   });
   const roofDetailMaterial=new THREE.LineBasicMaterial({color:roofForm==='Multi-hip'?'#734433':'#34454c'});
   const linePoints=[];
-  const lerpPoint=(a,b,t)=>a.map((value,index)=>value+(b[index]-value)*t);
   for(const panel of roofPanels(h)){
     const points=panel.points.map(([x,z,y])=>[x,y,z]);
-    const mesh=polygon(roof,points,roofMaterial,`roof:${panel.id}:${panel.face}`);
+    const mesh=polygon(roof,points,roofMaterial,`roof:${panel.id}:${panel.face}:${panel.patch}`);
     if(mesh)mesh.userData={sectionId:panel.id,face:panel.face,roomIds:panel.roomIds,roofForm:panel.form};
-    const p0=panel.points[0],p1=panel.points[1],p2=panel.points[2],p3=panel.points[3]||p2;
-    if(panel.form==='Intersecting gables'){
-      const distance=panel.ridgeAxis==='x'?panel.width:panel.depth;
-      const count=Math.max(2,Math.floor(distance/.85));
-      for(let index=0;index<=count;index++){
-        const t=index/count;
-        const a=lerpPoint(p0,p1,t),b=lerpPoint(p3,p2,t);
-        linePoints.push([a[0],a[2]+.012,a[1]],[b[0],b[2]+.012,b[1]]);
-      }
-    }else{
-      const courses=Math.max(2,Math.floor(Math.max(panel.width,panel.depth)/.38));
-      for(let index=1;index<courses;index++){
-        const t=index/courses;
-        const a=lerpPoint(p0,p3,t),b=lerpPoint(p1,p2,t);
-        linePoints.push([a[0],a[2]+.012,a[1]],[b[0],b[2]+.012,b[1]]);
-      }
-    }
+    for(const segment of roofDetailSegments(panel))for(const [x,z,y] of segment)linePoints.push([x,y,z]);
   }
+  for(const face of roofEdgeFaces(h))polygon(roof,face.points.map(([x,z,y])=>[x,y,z]),roofMaterial,`roof-${face.type}`);
+
   if(linePoints.length){
     const geometry=new THREE.BufferGeometry().setFromPoints(linePoints.map(([x,y,z])=>new THREE.Vector3(x,y,z)));
     const details=new THREE.LineSegments(geometry,roofDetailMaterial);

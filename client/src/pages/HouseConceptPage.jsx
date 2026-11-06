@@ -122,7 +122,7 @@ export function HouseConceptPage({ brief }) {
         <h3>{a.bedrooms}-bedroom {a.style.toLowerCase()} home</h3>
         <p className="hc-summary-copy">{house.layoutDescription} Roof: {house.roofDesign.toLowerCase()}.</p>
         <dl className="hc-quick-specs">
-          {[['bed', a.bedrooms, 'Bedrooms'], ['bath', a.bathrooms, 'Bathrooms'], ['ruler', `${house.footprintArea.toFixed(1)} m²`, 'Gross floor area'], ['layers', '1', 'Storey']].map(([icon, value, label]) =>
+          {[['bed', a.bedrooms, 'Bedrooms'], ['bath', a.bathrooms, 'Bathrooms'], ['ruler', `${house.footprintArea.toFixed(1)} m²`, 'Enclosed room area'], ['layers', '1', 'Storey']].map(([icon, value, label]) =>
             <div key={label}><Icon name={icon} /><dt>{label}</dt><dd>{value}</dd></div>)}
         </dl>
         <div className="hc-price"><span>ILLUSTRATIVE ESTIMATE · ITEMIZED MATERIALS + ALLOWANCE</span><strong>{estimate ? money(estimate.total) : priceDataState.error ? 'Estimate unavailable' : 'Loading material prices…'}</strong>
@@ -154,8 +154,8 @@ export function HouseConceptPage({ brief }) {
         {estimate
           ? <div className={`hc-budget ${withinBudget ? '' : 'hc-budget--over'}`}>
               <Icon name={withinBudget ? 'check' : 'alert'} size={17} />
-              <div><strong>{withinBudget ? 'Within your demo budget' : 'Above your demo budget'}</strong>
-                <span>{money(Math.abs(budgetDifference))} {withinBudget ? 'remaining' : 'over'} · Budget {money(Number(a.budget))}</span></div>
+              <div><strong>{withinBudget ? 'Within your stated budget' : 'This concept exceeds your budget'}</strong>
+                <span>{money(Math.abs(budgetDifference))} {withinBudget ? 'remaining' : 'over'} · Budget {money(Number(a.budget))}</span>{!withinBudget && <p>This layout does not meet your budget. Revise the room requirements or budget before treating it as a feasible option.</p>}</div>
             </div>
           : <p role={priceDataState.error ? 'alert' : 'status'}>{priceDataState.error || 'Loading the estimate and budget comparison…'}</p>}
         <Button to={editPath} icon="edit" block>Refine my brief</Button>
@@ -198,7 +198,7 @@ export function HouseConceptPage({ brief }) {
         <details className="hc-accordion"><summary>Room dimensions <span>{house.rooms.length} spaces</span></summary>
           <div className="hc-table-wrap"><table><caption className="visually-hidden">Generated room dimensions and areas</caption><thead><tr><th scope="col">Space</th><th scope="col">Dimensions</th><th scope="col">Area</th></tr></thead>
             <tbody>{house.rooms.map((room) => <tr key={room.id}><th scope="row">{room.name}</th><td>{room.width.toFixed(1)} × {room.depth.toFixed(1)} m</td><td>{room.area.toFixed(1)} m²</td></tr>)}</tbody></table></div>
-          <p className="hc-fine-print">Room areas exclude walls. The construction estimate uses the gross building area.</p>
+          <p className="hc-fine-print">Area sums the enclosed room rectangles, including circulation. Wall thickness and terraces are excluded; this is an approximate pricing basis, not a surveyed gross building area.</p>
         </details>
         {recordedNeeds.length > 0 && <details className="hc-accordion"><summary>Needs recorded for further review</summary><p>These requests are saved in your brief. They have not been automatically resolved in this layout.</p>
           <dl className="hc-recorded-needs">{recordedNeeds.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl></details>}
