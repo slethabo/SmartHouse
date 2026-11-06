@@ -87,3 +87,6 @@ JWT cookie authentication and role checks already exist. New services must check
 ## Migration boundaries
 
 The current cost module estimates `floor area * finish rate`, with fixed percentage categories and contingency included in that total. The target estimator uses explicit quantity/area/allowance lines and separately documented contingency. These are different calculation models and must be versioned. Existing saved catalogue plans cannot be relabelled generated designs because they do not have canonical room geometry or confirmed briefs.
+
+
+Multi-storey implementation update: see [MULTI_STOREY.md](MULTI_STOREY.md) for the current per-floor contract, stairs, source limitations, costing assumptions and verification. Legacy single-storey descriptions elsewhere in this document describe the earlier baseline.

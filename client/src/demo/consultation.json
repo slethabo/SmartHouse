@@ -102,6 +102,15 @@
           "hint": "Include adults and children who will usually live here. Room counts are entered separately below."
         },
         {
+          "key": "storeys",
+          "label": "Number of storeys",
+          "type": "number",
+          "min": 1,
+          "max": 3,
+          "required": false,
+          "hint": "Choose 1, 2 or 3. Missing values keep existing projects single-storey. Upper floors include stairs and additional structural allowances; multi-storey layouts are authored adaptations, not traced upper-floor scans."
+        },
+        {
           "key": "bedrooms",
           "label": "Essential bedrooms",
           "type": "number",

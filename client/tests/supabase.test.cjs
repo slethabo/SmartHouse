@@ -104,3 +104,12 @@ test('abort, schema failures and ownership denials remain visible', async () => 
   await assert.rejects(request('/projects', { signal: AbortSignal.abort() }), (e) => e.name === 'AbortError');
   assert.equal(calls.length, 2);
 });
+
+test('multi-storey drafts and confirmed briefs retain the selected level count', async () => {
+  const multi={...answers,storeys:3};
+  const row={id,project_id:id,version:1,answers:multi,site_width_m:20,site_depth_m:30,currency:'ZAR'};
+  const {client}=fakeClient([ok({revision:2,answers:multi}),ok(row)]);
+  const request=createSupabaseProjects(client,async()=>{});
+  const result=await request(`/projects/${id}/briefs`,{method:'POST',body:{draftRevision:2,acknowledged:true}});
+  assert.equal(result.data.brief.answers.storeys,3);
+});

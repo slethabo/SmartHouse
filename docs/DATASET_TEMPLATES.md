@@ -139,8 +139,8 @@ architectural concepts rather than certified construction drawings.
 
 ## Integration and versioning
 
-Generated objects use `schemaVersion: 5` and
-`generatorVersion: 'source-plans-v5-joined-roofs'`. Keep the entire generated object,
+Generated objects use `schemaVersion: 6` and
+`generatorVersion: 'source-plans-v6-multi-storey'`. Keep the entire generated object,
 including `walls`, opening edges, `privateTo`, source metadata, selected features,
 space profile, roof form, and alternatives, when saving a concept snapshot. The Supabase
 schema's geometry JSONB supports these additions; no SQL reset is required.
@@ -196,3 +196,6 @@ requested rooms remain intact so users can revise the brief deliberately.
 Regression coverage includes six-bedroom cases for all three families and both
 roof forms: no positive-area roof overlap, sampled coverage without gaps, wall
 profiles below the roof over their full length, and finite material estimates.
+
+
+Multi-storey variants use separately authored floor programs rather than claiming that the source scans contain upper levels. See [MULTI_STOREY.md](MULTI_STOREY.md).

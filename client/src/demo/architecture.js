@@ -93,6 +93,9 @@ function partitionFootprint(rooms) {
 }
 
 export function roofSections(house) {
+  if(house.roofPlans)return house.roofPlans.flatMap(plan=>roofSections(plan).map(s=>({...s,id:`${plan.id}-${s.id}`,eaveHeight:s.eaveHeight+plan.elevation,ridgeHeight:s.ridgeHeight+plan.elevation})));
+  if(house.roofPlan)return roofSections(house.roofPlan);
+  if(!house.rooms.length)return [];
   if(sectionCache.has(house))return sectionCache.get(house);
   const form = resolveRoofForm(house);
   const partition = partitionFootprint(house.rooms);
@@ -187,6 +190,9 @@ export function exteriorHeight(house, wall, x, y) {
 }
 
 export function roofPanels(house) {
+  if(house.roofPlans)return house.roofPlans.flatMap(plan=>roofPanels(plan).map(p=>({...p,id:`${plan.id}-${p.id}`,baseElevation:plan.elevation,
+    points:p.points.map(([x,y,z])=>[x,y,z+plan.elevation])})));
+  if(house.roofPlan)return roofPanels(house.roofPlan);
   if(!panelCache.has(house))panelCache.set(house,resolveRoofPanels(rawRoofPanels(house)));
   return [...panelCache.get(house)];
 }
@@ -196,6 +202,9 @@ export function roofPanels(house) {
  */
 export function exteriorWallProfile(house,wall) {
   const dx=wall.axis==='x'?1:0,dy=wall.axis==='y'?1:0,cuts=[0,wall.length],candidates=[];
+  const midX=wall.x+dx*wall.length/2,midY=wall.y+dy*wall.length/2;
+  if(house.upperCover?.some(r=>midX>=r.x-1e-5&&midX<=r.x+r.width+1e-5&&midY>=r.y-1e-5&&midY<=r.y+r.depth+1e-5))
+    return [{offset:0,height:house.coveredWallHeight},{offset:wall.length,height:house.coveredWallHeight}];
   for(const panel of roofPanels(house)){
     const interval=lineInterval(panel.points,wall.x,wall.y,dx,dy);
     if(interval){
@@ -235,6 +244,9 @@ export function roofDetailSegments(panel) {
 
 /** Close stepped joins and outer eaves; never add full gables inside another roof. */
 export function roofEdgeFaces(house) {
+  if(house.roofPlans)return house.roofPlans.flatMap(plan=>roofEdgeFaces(plan).map(face=>({...face,baseElevation:plan.elevation,
+    points:face.points.map(([x,y,z])=>[x,y,z+plan.elevation])})));
+  if(house.roofPlan)return roofEdgeFaces(house.roofPlan);
   if(edgeCache.has(house))return edgeCache.get(house);
   const panels=roofPanels(house),planes=panels.map(p=>roofPlane(p.points)),faces=[];
   for(const [i,panel] of panels.entries())for(let e=0;e<panel.points.length;e++){

@@ -4,14 +4,14 @@
 
 ## Purpose and scope
 
-The platform converts an architectural consultation into a confirmed brief, personalised house concepts, matching floor plans and visual models, and estimated costs. Users refine and compare options before downloading a concept package. The initial release supports rectangular plots and single-storey houses with limited room types and appearance options. Complex terrain, arbitrary plots, multi-storey structures, detailed engineering, automatic approvals, procurement, and guaranteed prices are excluded.
+The platform converts an architectural consultation into a confirmed brief, personalised house concepts, matching floor plans and visual models, and estimated costs. Users refine and compare options before downloading a concept package. The initial release supports rectangular plots and one-to-three-storey houses with limited room types and appearance options. Complex terrain, arbitrary plots, multi-storey structures, detailed engineering, automatic approvals, procurement, and guaranteed prices are excluded.
 
 ## Actors
 
 **Implemented scope refinement:** the consultation can now adapt three manually
 reviewed dataset-derived layout families with Compact/Balanced/Generous room sizes
 and optional en-suite, wardrobe, dining, entertainment and garage spaces. Finish
-quality is a separate choice. Rectangular, single-storey and concept-only limits
+quality is a separate choice. Rectangular-plot, one-to-three-storey and concept-only limits
 remain. See [dataset templates](DATASET_TEMPLATES.md) for source provenance,
 adaptation assumptions, algorithm boundaries and verification.
 
@@ -84,3 +84,6 @@ Numeric performance limits, supported room minima, style choices, and rate data 
 ## Change control
 
 The revised proposal is the product baseline. This specification elaborates it. Change requests must identify affected requirements, data contracts, tests, and delivery impact. The team and supervisor should agree scope extensions before adding them to the release backlog.
+
+
+Multi-storey implementation update: see [MULTI_STOREY.md](MULTI_STOREY.md) for the current per-floor contract, stairs, source limitations, costing assumptions and verification. Legacy single-storey descriptions elsewhere in this document describe the earlier baseline.

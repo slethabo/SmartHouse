@@ -1,5 +1,15 @@
 # Frontend Prototype Progress
 
+## Latest: one, two and three storeys
+
+The consultation, generated geometry, per-floor plans, interactive 3D inspection,
+SVG/JSON exports and estimates now support one to three storeys. Existing briefs
+without the optional choice remain single-storey. Multi-level arrangements are
+authored adaptations with aligned stair/service cores and supported upper plates;
+they are not reconstructions of upper floors from the single-storey scans.
+See [multi-storey implementation](MULTI_STOREY.md) for geometry, allowances, tests
+and the additive Supabase upgrade. The hosted database was not modified.
+
 ## Latest correction: joined roofs and wall profiles
 
 The roof/wall artifacts seen in the six-bedroom preview were traced to midpoint

@@ -110,13 +110,15 @@ function getRoofSurfaceArea(house) {
 function estimateHouseFromCatalogue(house, ratePerM2, products, benchmarks) {
   if (!Array.isArray(products)) throw new Error('The product catalogue could not be read.');
   if (!benchmarks?.rates || benchmarks.currency !== 'ZAR') throw new Error('Material price benchmarks could not be read.');
-  const area = positiveNumber(house.footprintArea, 'Floor area');
+  const area = positiveNumber(house.totalFloorArea||house.footprintArea, 'Floor area');
+  const upperArea=house.additionalStoreyAllowance?.upperFloorArea||0;
+  const insulationArea=house.floors?house.floors[house.floors.length-1].area:area;
   const rate = positiveNumber(ratePerM2, 'Allowance rate per m²');
   const exteriorPerimeter = (house.walls || []).filter((wall) => wall.exterior).reduce((sum, wall) => sum + wall.length, 0)
     || 2 * (house.width + house.length);
   const windows = house.windows || [];
   const windowArea = windows.reduce((sum, window) => sum + window.length * (window.height || 1.15), 0);
-  const externalDoors = (house.doors || []).filter((door) => door.entrance || door.garage);
+  const externalDoors = (house.doors || []).filter((door) => door.entrance || door.garage || door.terrace);
   const externalDoorArea = externalDoors.reduce((sum, door) => sum + door.length * (door.garage ? 2.4 : 2.15), 0);
   const wallArea = Math.max(0, exteriorPerimeter * 3 - windowArea - externalDoorArea);
   const roofDesign = house.roofDesign || (house.roofType === 'flat' ? 'stepped-flat' : house.roofType === 'gable' ? 'gable' : 'mono-pitch');
@@ -129,7 +131,7 @@ function estimateHouseFromCatalogue(house, ratePerM2, products, benchmarks) {
   const roofArea = getRoofSurfaceArea(house);
   const quantities = {
     brick: Math.ceil(wallArea * 50 * 1.05),
-    concrete: +(area * 0.1).toFixed(2),
+    concrete: +((area-upperArea)*.1+upperArea*.2).toFixed(2),
     gutter: Math.ceil(gutterLength / 6),
   };
   const lines = CATALOGUE_PRODUCTS.map((item) => {
@@ -139,6 +141,7 @@ function estimateHouseFromCatalogue(house, ratePerM2, products, benchmarks) {
     const available = Boolean(product?.is_in_stock);
     return {
       ...item,
+      assumption:item.kind==='concrete'&&house.storeys>1?'100 mm ground slab plus a 200 mm equivalent upper-floor slab allowance, with stair openings deducted. Reinforcement and member sizing require engineering.':item.assumption,
       productId: item.id,
       sourceType: 'catalogue',
       sku: product?.sku || null,
@@ -181,7 +184,7 @@ function estimateHouseFromCatalogue(house, ratePerM2, products, benchmarks) {
   const researchLines = [
     makeBenchmarkLine('windows', +windowArea.toFixed(2), `Total generated window area; rate is normalized from standard 1200 x 1200 mm aluminium windows.`),
     makeBenchmarkLine('ceilingBoards', Math.ceil(area / ceilingCoverage), `Enclosed room area divided by ${ceilingCoverage} m² sheet coverage; rounded up.`),
-    makeBenchmarkLine('roofInsulation', Math.ceil(area / insulationCoverage), `Enclosed room area divided by ${insulationCoverage} m² roll coverage; rounded up.`),
+    makeBenchmarkLine('roofInsulation', Math.ceil(insulationArea / insulationCoverage), `Top-floor enclosed area divided by ${insulationCoverage} m² roll coverage; rounded up.`),
   ];
   if (!flatRoof && roofArea > 0) {
     const sheetCoverage = positiveNumber(benchmarks.rates.roofSheets.coverageM2, 'Roof sheet coverage');
@@ -193,9 +196,18 @@ function estimateHouseFromCatalogue(house, ratePerM2, products, benchmarks) {
   const catalogueSubtotal = lines.reduce((sum, line) => sum + (line.total || 0), 0);
   const researchedMaterialsSubtotal = researchLines.reduce((sum, line) => sum + line.total, 0);
   const pricedMaterialsSubtotal = catalogueSubtotal + researchedMaterialsSubtotal;
+  const structuralLines=house.storeys>1?[
+    {key:'upperStructure',label:'Upper-level structural allowance',quantity:upperArea,unit:'m²',unitPrice:house.additionalStoreyAllowance.upperStructurePerM2,
+      total:Math.round(upperArea*house.additionalStoreyAllowance.upperStructurePerM2),priced:true,sourceType:'allowance',sourceSummary:'Authored prototype allowance, not a supplier price',
+      assumption:'Additional framing, reinforcement and load-path complexity. Engineering and detailed quantities are not calculated.'},
+    {key:'stairs',label:'Stair construction allowance',quantity:house.stairs.length,unit:'floor connection',unitPrice:house.additionalStoreyAllowance.stairPerConnection,
+      total:house.stairs.length*house.additionalStoreyAllowance.stairPerConnection,priced:true,sourceType:'allowance',sourceSummary:'Authored prototype allowance, not a supplier price',
+      assumption:'One switchback stair per floor connection; indicative structure and guarding allowance, not a quotation.'},
+  ]:[];
+  const structuralAllowanceSubtotal=structuralLines.reduce((sum,line)=>sum+line.total,0);
   const areaAllowance = Math.round(area * rate);
-  const total = Math.max(areaAllowance, pricedMaterialsSubtotal);
-  const allowance = total - pricedMaterialsSubtotal;
+  const total = Math.max(areaAllowance, pricedMaterialsSubtotal)+structuralAllowanceSubtotal;
+  const allowance = total - pricedMaterialsSubtotal-structuralAllowanceSubtotal;
   return {
     total,
     ratePerM2: rate,
@@ -204,9 +216,10 @@ function estimateHouseFromCatalogue(house, ratePerM2, products, benchmarks) {
     researchedMaterialsSubtotal,
     pricedMaterialsSubtotal,
     allowance,
-    lines: [...lines, ...researchLines],
+    structuralAllowanceSubtotal,
+    lines: [...lines, ...researchLines,...structuralLines],
     allowanceLabel: 'Other unpriced materials, finishes, labour, services and contingency',
-    pricingNote: `Catalogue lines use fixed, in-stock ZAR prices from smart_house_products.json. Additional materials use South African retail benchmarks averaged on ${benchmarks.researchedOn}; store prices and availability vary. The total is the greater of the existing area-rate baseline and the sum of priced materials; the remaining difference is a disclosed allowance for unpriced work and labour. Quantities are schematic and use the assumptions on each line. This is not a supplier quote.`,
+    pricingNote: `Catalogue lines use fixed, in-stock ZAR prices from smart_house_products.json. Additional materials use South African retail benchmarks averaged on ${benchmarks.researchedOn}; store prices and availability vary. The base is the greater of the total-floor-area allowance and priced materials. Multi-storey projects then add separately disclosed stair and upper-structure prototype allowances, not supplier prices. The remaining difference is an allowance for unpriced work and labour. Quantities are schematic and use the assumptions on each line. This is not a supplier quote.`,
   };
 }
 

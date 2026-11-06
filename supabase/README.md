@@ -178,3 +178,17 @@ Official references used:
 - [Row-level security](https://supabase.com/docs/guides/database/postgres/row-level-security)
 - [Database functions](https://supabase.com/docs/guides/database/functions)
 - [Private Storage policies](https://supabase.com/docs/guides/storage/security/access-control)
+
+
+## Multi-storey extension
+
+Confirmed `answers` JSON preserves the optional numeric `storeys` field (1-3;
+missing means 1). The current browser workflow does not need new tables. New
+installations validate it in `schema.sql`. Existing installations may run
+`upgrade-multi-storey.sql` in the SQL editor for DB-side validation and to permit
+future trusted concept snapshots with 2 or 3 floors. It does not rewrite project
+rows or expand RLS/grants. Never rerun the bootstrap schema on an existing project.
+The upgrade is tested on an isolated database, not applied to the hosted project
+by this change. Store `totalFloorArea` as concept/estimate floor area and retain
+`footprintArea` separately inside geometry. Schema 6 includes `floors`, `stairs`,
+`roofPlans`, `floorHeight` and additional-storey allowance assumptions.

@@ -490,3 +490,85 @@ test('dataset layout preferences and additional spaces survive draft confirmatio
   assert.equal(house.template.id,'wide-979'); assert.equal(house.spaceLevel,'Generous');
   assert.ok(house.rooms.some((r)=>r.type==='garage'));
 });
+
+test('one, two and three storeys validate and multi-storey choices survive confirmation', async () => {
+  for(const storeys of [0,4,1.5,'2'])assert.ok(validateConsultation(questionnaire.steps,{...answers,storeys}).storeys);
+  for(const storeys of [1,2,3])assert.equal(validateConsultation(questionnaire.steps,{...answers,storeys}).storeys,undefined);
+  const {data:project}=await request('/projects',{method:'POST',body:{title:'Three-level home'}});
+  await request(`/projects/${project.id}/consultation`,{method:'PUT',body:{expectedRevision:0,answers:{...answers,storeys:3}}});
+  await request(`/projects/${project.id}/briefs`,{method:'POST',body:{draftRevision:1,acknowledged:true}});
+  const reopened=(await request(`/projects/${project.id}`)).data;
+  assert.equal(reopened.briefs[0].brief.answers.storeys,3);
+  assert.equal(createHouseConcept(answers).storeys,1,'Old briefs must remain single-storey');
+});
+
+test('multi-storey plans preserve room counts, connected stairs, privacy and supported floor plates', () => {
+  for(const storeys of [2,3])for(const layoutPreference of ['Linear living','Split living','Wide family residence'])
+    for(const bedrooms of [1,3,6])for(const bathrooms of [1,3,4])for(const spaceLevel of ['Compact','Balanced','Generous'])for(const extras of [false,true])for(const kitchen of ['Open plan','Separate']){
+      const house=createHouseConcept({...answers,storeys,layoutPreference,bedrooms,bathrooms,spaceLevel,kitchen,
+        homeFeatures:extras?['Main en-suite','Walk-in wardrobe','Double garage','Separate dining room','Entertainment room']:[]});
+      assert.equal(house.floors.length,storeys);assert.equal(house.stairs.length,storeys-1);
+      assert.equal(house.rooms.filter(r=>r.type==='bedroom').length,bedrooms);
+      assert.equal(house.rooms.filter(r=>r.type==='bathroom').length,bathrooms);
+      const reached=new Set(['outside']);
+      for(let i=0;i<house.rooms.length+1;i++)for(const door of house.doors)if(door.connects.some(id=>reached.has(id)))door.connects.forEach(id=>reached.add(id));
+      for(const f of house.floors){
+        assert.ok(f.area>0&&Number.isFinite(f.area));
+        for(const terrace of f.terraces){assert.ok(reached.has(terrace.id),'Upper terraces need an accessible doorway');assert.ok(terrace.guardEdges.length>0);}
+        for(const r of f.rooms){
+          assert.ok(reached.has(r.id),r.name+' must connect to the ground entrance via stairs');
+          for(const other of f.rooms.filter(o=>o.id!==r.id))assert.ok(Math.min(r.x+r.width,other.x+other.width)-Math.max(r.x,other.x)<.001||Math.min(r.y+r.depth,other.y+other.depth)-Math.max(r.y,other.y)<.001,'Rooms must not overlap on the same floor');
+          if(r.privateTo)assert.ok(f.doors.filter(d=>d.connects.includes(r.id)).every(d=>d.connects.includes(r.privateTo)));
+          if(r.type==='bedroom')assert.ok(f.windows.some(w=>w.roomId===r.id),'Every bedroom must have an exterior window');
+          if(f.level>0)for(const [x,y] of [[r.x+.01,r.y+.01],[r.x+r.width-.01,r.y+r.depth-.01]])
+            assert.ok(house.floors[f.level-1].rooms.some(lower=>x>=lower.x-.001&&x<=lower.x+lower.width+.001&&y>=lower.y-.001&&y<=lower.y+lower.depth+.001),'Upper rooms must have a supporting floor plate below');
+        }
+      }
+      for(const stair of house.stairs){
+        const lower=house.rooms.find(r=>r.id===stair.fromRoomId),upper=house.rooms.find(r=>r.id===stair.toRoomId);
+        assert.deepEqual([lower.x,lower.y,lower.width,lower.depth],[upper.x,upper.y,upper.width,upper.depth]);
+        assert.equal(stair.steps,18);assert.ok(stair.flightWidth>=1&&stair.tread>=.28);
+        assert.ok(Math.abs(stair.steps*stair.riser-house.floorHeight)<.001);
+      }
+      assert.ok(Math.abs(house.totalFloorArea-house.floors.reduce((sum,f)=>sum+f.area,0))<.02);
+      assert.equal(house.total,Math.round(house.totalFloorArea*house.rate)+house.additionalStoreyAllowance.total);
+    }
+});
+
+test('multi-storey meshes contain real stairs and slab openings, with inspectable levels and priceable roofs', () => {
+  const products=JSON.parse(fs.readFileSync(path.join(__dirname,'../../smart_house_products.json'),'utf8'));
+  const benchmarks=JSON.parse(fs.readFileSync(path.join(__dirname,'../src/demo/material_price_benchmarks.json'),'utf8'));
+  for(const storeys of [2,3])for(const roofForm of ['Intersecting gables','Multi-hip']){
+    const house=createHouseConcept({...answers,storeys,bedrooms:6,bathrooms:3,roofForm,layoutPreference:'Wide family residence',homeFeatures:['Main en-suite','Walk-in wardrobe']});
+    const model=buildHouseModel(house);model.root.updateMatrixWorld(true);
+    if(house.terraces.some(t=>t.level>0)){let guards=0;model.root.traverse(o=>{if(o.name==='terrace-guard')guards++;});assert.ok(guards>0);}
+    assert.equal(model.floorGroups.length,storeys);assert.equal(model.stairGroups.length,storeys-1);
+    for(const {group} of model.stairGroups){
+      const treads=group.children.filter(m=>m.name==='stair-tread');assert.equal(treads.length,18);
+      assert.ok(treads.every(m=>m.geometry.parameters.height<=.2),'Thin treads/stringers must preserve headroom between stacked flights');
+      assert.ok(group.children.some(m=>m.name==='stair-stringer'));assert.ok(group.children.some(m=>m.name==='stair-guard-post'));
+    }
+    if(storeys===3){
+      const lower=model.stairGroups[0].group.children.filter(m=>m.name==='stair-tread');
+      const upper=model.stairGroups[1].group.children.filter(m=>m.name==='stair-tread');
+      for(let i=0;i<lower.length;i++)assert.ok(upper[i].position.y-upper[i].geometry.parameters.height/2-
+        (lower[i].position.y+lower[i].geometry.parameters.height/2)>2,'Stacked flights must retain vertical clearance above corresponding treads');
+    }
+    for(const floor of house.floors.slice(1)){
+      const group=model.floorGroups[floor.level],opening=floor.opening;
+      for(const mesh of group.root.children.filter(m=>m.name.startsWith('floor:')||m.name.startsWith('foundation:'))){
+        const bounds=new THREE.Box3().setFromObject(mesh),ox=opening.x-house.width/2,oy=opening.y-house.length/2;
+        const dx=Math.min(bounds.max.x,ox+opening.width)-Math.max(bounds.min.x,ox);
+        const dy=Math.min(bounds.max.z,oy+opening.depth)-Math.max(bounds.min.z,oy);
+        assert.ok(dx<.001||dy<.001,'No slab may cross a stair opening');
+      }
+    }
+    model.setFloor(0);assert.ok(model.floorGroups.slice(1).every(f=>!f.root.visible));assert.equal(model.roof.visible,false);
+    model.showAll();assert.ok(model.floorGroups.every(f=>f.root.visible));assert.equal(model.roof.visible,true);
+    model.root.traverse(o=>{if(o.geometry?.attributes.position)assert.ok(Array.from(o.geometry.attributes.position.array).every(Number.isFinite));});
+    const estimate=estimateHouseFromCatalogue(house,house.rate,products,benchmarks);
+    assert.ok(estimate.structuralAllowanceSubtotal>0);assert.ok(estimate.lines.some(l=>l.key==='stairs'&&l.quantity===storeys-1));
+    assert.equal(estimate.total,estimate.pricedMaterialsSubtotal+estimate.structuralAllowanceSubtotal+estimate.allowance);
+    disposeHouseModel(model.root);
+  }
+});

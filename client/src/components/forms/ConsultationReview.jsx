@@ -20,7 +20,7 @@ export function ConsultationReview({ config, answers, onEdit, busy }) {
       <Icon name={preview.conflicts.length ? 'alert' : 'check'} size={19} /><div>
         <strong>{preview.conflicts.length ? 'Your selected layout needs adjustment' : 'Your brief is ready to explore'}</strong>
         <p>{preview.template.name} · {preview.spaceLevel} room sizes · adapted from dataset plan {preview.template.sourceId}.</p>
-        <p>Initial check: {preview.footprintArea.toFixed(1)} m² at {money(preview.rate)} / m² gives a demo estimate of {money(preview.total)}.</p>
+        <p>Initial check: {preview.storeys||1} {(preview.storeys||1)>1?'storeys':'storey'} · {preview.totalFloorArea.toFixed(1)} m² total floor area · {preview.footprintArea.toFixed(1)} m² ground footprint. Demo estimate {money(preview.total)}{preview.storeys>1?', including separate stair and upper-structure allowances':''}.</p>
         {preview.conflicts.map((conflict) => <p key={conflict}>{conflict}</p>)}
         {preview.notes.map((note) => <p key={note}>{note}</p>)}
         {preview.conflicts.length > 0 && <p>You can revise the brief or create the concept with these conflicts clearly flagged.</p>}
@@ -38,7 +38,7 @@ export function ConsultationReview({ config, answers, onEdit, busy }) {
       </div>)}</dl>
     </details>)}</div>
     <div className="consultation-assumptions"><h3>Before you create the concept</h3>
-      <p>The generator assumes a flat, rectangular plot and supports single-storey homes, with demo 1 m boundary allowances. Site shape and slope are not assessed. Costs are illustrative. Confirming your brief starts a design exploration; it does not approve construction.</p>
+      <p>The generator assumes a flat, rectangular plot and supports one to three storeys, with demo 1 m boundary allowances. Site shape and slope are not assessed. Multi-storey arrangements are authored concepts with stairs and aligned service zones; engineering, fire escape and accessibility still require professional review. Costs are illustrative. Confirming your brief starts a design exploration; it does not approve construction.</p>
     </div>
   </>;
 }

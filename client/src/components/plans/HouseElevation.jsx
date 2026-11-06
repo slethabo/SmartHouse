@@ -1,8 +1,13 @@
 import { useId } from 'react';
 import { exteriorWallProfile } from '../../demo/architecture';
+import { MultiStoreyDrawing } from './MultiStoreyDrawing';
 
 /** Orthographic projection of exposed facade segments, including recessed entrances. */
 export function HouseElevation({house:h,side=false}) {
+  return h.floors?<MultiStoreyDrawing house={h} side={side} elevation/>:<SingleHouseElevation house={h} side={side}/>;
+}
+
+function SingleHouseElevation({house:h,side=false}) {
   const id=useId().replace(/:/g,''),extent=side?h.length:h.width,scale=Math.min(70,750/extent),left=(900-extent*scale)/2,ground=350;
   const edge=side?'right':'front';
   const facades=h.walls.filter(w=>w.exterior&&w.edge===edge).sort((a,b)=>side?a.x-b.x:b.y-a.y);

@@ -6,13 +6,15 @@ insta# SmartHouse
 
 SmartHouse will guide homeowners through an architectural consultation, turn their answers into a confirmed design brief, and generate personalised house concepts with matching floor plans, interactive visual models, and estimated construction costs. Users will refine options and download a concept design package.
 
-**Project status:** the prototype includes Supabase email/password accounts, local or cloud-backed projects, a guided consultation, confirmed briefs, three dataset-derived layout families, interactive 3D models, demo estimates and SVG/JSON downloads. Room-size profiles and optional en-suite, wardrobe, dining, entertainment and garage spaces change the generated geometry. Automatic interpretation of arbitrary plan images and professional concept packages remain future work. See [prototype progress](docs/PROTOTYPE_PROGRESS.md) and [dataset templates](docs/DATASET_TEMPLATES.md).
+**Project status:** the prototype includes Supabase email/password accounts, local or cloud-backed projects, a guided consultation, confirmed briefs, three dataset-derived layout families, authored two- and three-storey adaptations, interactive 3D models, demo estimates and SVG/JSON downloads. Room-size profiles and optional en-suite, wardrobe, dining, entertainment and garage spaces change the generated geometry. Automatic interpretation of arbitrary plan images and professional concept packages remain future work. See [prototype progress](docs/PROTOTYPE_PROGRESS.md) and [dataset templates](docs/DATASET_TEMPLATES.md).
+
+For storey selection, stairs, per-level views/exports and additional cost assumptions, see [multi-storey implementation](docs/MULTI_STOREY.md).
 
 ## Product workflow
 
 Consultation -> review and confirm brief -> generate feasible options -> explore house, plan, and costs -> revise and compare -> download selected concept.
 
-Initial scope: rectangular plots, single-storey homes, supported room components and appearance choices, and one documented pricing context. Concepts require subsequent professional review; construction-ready engineering and automatic approval are outside the initial release.
+Initial scope: rectangular plots, one to three storeys, supported room components and appearance choices, and one documented pricing context. Concepts require subsequent professional review; construction-ready engineering and automatic approval are outside the initial release.
 
 ## Documentation
 

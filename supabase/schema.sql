@@ -65,7 +65,7 @@ create table public.design_briefs (
   site_depth_m numeric(8,2) not null check (site_depth_m between 5 and 200),
   budget numeric(14,2) not null check (budget > 0 and budget <= 100000000),
   currency text not null default 'ZAR' check (currency = 'ZAR'),
-  assumptions text not null default 'Schematic single-storey concept; professional review required.',
+  assumptions text not null default 'Schematic one-to-three-storey concept; professional review required.',
   confirmed_at timestamptz not null default now(),
   unique (project_id, version),
   unique (project_id, draft_revision),
@@ -123,7 +123,7 @@ create table public.house_concepts (
   architectural_style text not null check (architectural_style in ('Modern','Traditional','Minimalist')),
   bedrooms smallint not null check (bedrooms between 1 and 6),
   bathrooms smallint not null check (bathrooms between 1 and 4),
-  floors smallint not null default 1 check (floors = 1),
+  floors smallint not null default 1 check (floors between 1 and 3),
   width_m numeric(8,2) not null check (width_m > 0 and width_m <= 200),
   depth_m numeric(8,2) not null check (depth_m > 0 and depth_m <= 200),
   floor_area_m2 numeric(10,2) not null check (floor_area_m2 > 0 and floor_area_m2 <= 40000),
@@ -290,6 +290,14 @@ begin
   select * into result from public.design_briefs where project_id=p_project_id and draft_revision=p_draft_revision;
   if found then return result; end if;
   a := draft.answers;
+  if a ? 'storeys' then
+    if jsonb_typeof(a->'storeys') <> 'number' then
+      raise exception 'Storeys must be a number from 1 to 3' using errcode='22023';
+    end if;
+    if (a->>'storeys')::numeric not between 1 and 3 or (a->>'storeys')::numeric <> trunc((a->>'storeys')::numeric) then
+      raise exception 'Storeys must be a whole number from 1 to 3' using errcode='22023';
+    end if;
+  end if;
   foreach k in array array['location','width','length','access','budget','finish',
     'budgetIncludes','occupants','bedrooms','bathrooms','workFromHome','guests','kitchen','style','privacy','accessibility'] loop
     if a->>k is null or btrim(a->>k) = '' then

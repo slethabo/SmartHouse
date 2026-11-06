@@ -53,6 +53,12 @@
 .hc-budget strong { display: block; font-size: .72rem; font-weight: 650; }
 .hc-budget span { display: block; font-size: .64rem; margin-top: 4px; line-height: 1.6; }
 .hc-budget--over { color: #8a4930; background: #fcf0e5; }
+.hc-floor-tabs { display:flex; flex-wrap:wrap; gap:6px; padding:10px 14px; background:#f5f6ef; }
+.hc-floor-tabs button { border:1px solid #c7d1bf; border-radius:7px; padding:8px 12px; background:white; color:#304b38; cursor:pointer; }
+.hc-floor-tabs button[aria-pressed="true"] { background:#dfe9d9; border-color:#42654c; }
+.hc-floor-tabs small { display:block; margin-top:3px; }
+.house-floor-selector { display:flex; align-items:center; gap:10px; padding:10px 14px; font-size:.8rem; }
+.house-floor-selector select { padding:7px; border:1px solid #c7d1bf; border-radius:6px; background:white; max-width:65%; }
 .hc-budget p { margin: 7px 0 0; font-size: .72rem; line-height: 1.6; }
 .home-concept .btn--primary { background: #28563e; border-color: #28563e; color: white; }
 .home-concept .btn--primary:hover { background: #1c402d; }

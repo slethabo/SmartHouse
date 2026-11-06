@@ -13,6 +13,7 @@ const steps = [
     { key: 'finish', label: 'Preferred finishes', options: ['Basic', 'Standard', 'Premium'], required: true },
     { key: 'budgetIncludes', label: 'What does your budget include?', type: 'multiselect', options: ['Labour', 'Materials', 'Site preparation', 'Professional fees', 'Landscaping', 'Contingency'], required: true, hint: 'Select all that apply.' },
     { key: 'occupants', label: 'How many people will live here?', type: 'number', min: 1, max: 30, required: true },
+    { key: 'storeys', label: 'Number of storeys', type: 'number', min: 1, max: 3, required: false },
     { key: 'bedrooms', label: 'Essential bedrooms', type: 'number', min: 1, max: 6, required: true },
     { key: 'bathrooms', label: 'Essential bathrooms', type: 'number', min: 1, max: 4, required: true },
   ] },
@@ -53,7 +54,7 @@ function buildBrief(answers) {
   const visibleAnswers = Object.fromEntries(questions.filter((q) => active(q, clean) && clean[q.key] !== undefined).map((q) => [q.key, clean[q.key]]));
   return { questionnaireVersion: 1, answers: visibleAnswers, siteAreaM2: clean.width * clean.length,
     currency: 'ZAR', stage: 'concept_brief',
-    assumptions: ['Single-storey concept assuming a flat, rectangular plot.', 'Budget inclusions require clarification in the future cost model.', 'Boundary clearances and site services require professional review.'],
+    assumptions: [`${clean.storeys || 1}-storey concept assuming a flat, rectangular plot.`, 'Budget inclusions require clarification in the future cost model.', 'Boundary clearances and site services require professional review.'],
     reviewNotes: [ ...(clean.access === 'Unknown' ? ['Road access direction is unknown.'] : []),
       'Additional essential features, accessibility, and future plans are recorded for review.', 'Validated architectural generation and pricing validation are not available in this release.' ] };
 }

@@ -1,6 +1,8 @@
 import { useId } from 'react';
 import { placeFurniture } from '../../demo/furniture';
 import { roofPanels, exteriorWallProfile, roofEdgeFaces } from '../../demo/architecture';
+import { selectFloor } from '../../demo/multiStorey';
+import { MultiStoreyDrawing } from './MultiStoreyDrawing';
 
 const colours = { living: '#e7eddb', kitchen: '#e7eddb', bedroom: '#f2e9d7', bathroom: '#dfeaf0', office: '#e6e2ed', utility: '#e9e9e2', hall: '#f9f8f2', dining: '#efe3cd', entertainment: '#e2decf', dressing: '#e8dcca', garage: '#d5d9d7' };
 function Furniture({ room }) {
@@ -78,30 +80,57 @@ function Window({ window: w, t }) {
   </g>;
 }
 
-export function FloorPlan({ house: h }) {
+export function FloorPlan({house,floorId,drawingProps}) {
+  return <SingleFloorPlan house={selectFloor(house,floorId)} drawingProps={drawingProps} />;
+}
+
+export function FloorPlanSet({house}) {
+  let offset=0;
+  const sheets=(house.floors||[{id:'floor-0',length:house.length}]).map(f=>{
+    const height=900*(f.length+3.6)/(house.width+2.4),y=offset;offset+=height;
+    return <FloorPlan key={f.id} house={house} floorId={f.id} drawingProps={{x:0,y,width:900,height}} />;
+  });
+  return <svg xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 900 ${offset}`} role="img" aria-label="All floor plans">{sheets}</svg>;
+}
+
+function StairSymbol({room:r}) {
+  const landing=r.depth/4,run=r.depth/2,going=run/8;
+  return <g stroke="#80765f" strokeWidth=".035" fill="none">
+    <rect x={r.x+.08} y={r.y+landing} width={r.width-.16} height={r.depth-landing-.08} fill="#f4f0e5" strokeDasharray={r.down?'.12 .08':undefined}/>
+    {Array.from({length:9},(_,i)=><g key={i}><path d={`M${r.x+.12} ${r.y+landing+i*going}h${r.width/2-.2}`} /><path d={`M${r.x+r.width/2+.08} ${r.y+landing+i*going}h${r.width/2-.2}`} /></g>)}
+    <path d={`M${r.x+r.width*.25} ${r.y+landing+.1}v${run-.2}h${r.width*.5}v-${run-.2}`} stroke="#3f6350" strokeWidth=".055" />
+    <text x={r.x+r.width/2} y={r.y+r.depth-.2} textAnchor="middle" fontSize=".22" fill="#3f6350" stroke="none">{r.up&&r.down?'UP / DOWN':r.up?'UP':'DOWN'}</text>
+  </g>;
+}
+
+function SingleFloorPlan({ house: h,drawingProps }) {
   const tileId = useId().replace(/:/g, '') + '-bathroom-tile';
   const entrance = h.doors.find((d) => d.entrance);
   const drawWidth=Math.max(h.width,...(h.terraces||[]).map(t=>t.x+t.width)),drawLength=Math.max(h.length,...(h.terraces||[]).map(t=>t.y+t.depth));
-  return <svg className="house-floorplan" role="img" aria-label={`${h.template.name} floor plan with ${h.rooms.filter((r) => r.type === 'bedroom').length} bedrooms. Source plan ${h.template.sourceId}, adapted to your brief.`} viewBox={`-1.2 -2.2 ${drawWidth+2.4} ${drawLength+3.6}`}>
+  return <svg {...drawingProps} className="house-floorplan" role="img" aria-label={`${h.floorName||h.template.name} floor plan with ${h.rooms.filter((r) => r.type === 'bedroom').length} bedrooms. Source plan ${h.template.sourceId}, adapted to your brief.`} viewBox={`-1.2 -2.2 ${drawWidth+2.4} ${drawLength+3.6}`}>
     <title>{`${h.template.name} / adapted concept`}</title>
     <desc>{`${h.template.adaptation} Source: Floor Plans 500, plan ${h.template.sourceId}, Roboflow umair-ab9ex, ${h.template.sourceUrl}, ${h.template.license} as declared by the supplied dataset export.`}</desc>
     <defs><pattern id={tileId} width=".35" height=".35" patternUnits="userSpaceOnUse"><path d="M.35 0H0V.35" fill="none" stroke="#bacfd6" strokeWidth=".015" /></pattern></defs>
     <path d={`M0 -.8H${h.width} M0 -1v.4 M${h.width} -1v.4`} stroke="#98a48f" strokeWidth=".03" /><text x={h.width/2} y="-1" textAnchor="middle" fontSize=".28" fill="#52674d">{h.width.toFixed(1)} m</text>
     {(h.terraces||[]).map((t,i)=><g key={`terrace-${i}`}><rect x={t.x} y={t.y} width={t.width} height={t.depth} fill="#e1d8c6" stroke="#a89e87" strokeWidth=".04" /><text x={t.x+t.width/2} y={t.y+t.depth/2} fontSize=".2" textAnchor="middle" fill="#786d58">{t.name}</text></g>)}
-    {h.rooms.map((r)=><g key={r.id}><rect x={r.x} y={r.y} width={r.width} height={r.depth} fill={colours[r.type]} />{r.type==='bathroom'&&<rect x={r.x} y={r.y} width={r.width} height={r.depth} fill={`url(#${tileId})`} />}<Furniture room={r} />{r.addition&&<rect x={r.x+.16} y={r.y+.16} width={r.width-.32} height={r.depth-.32} fill="none" stroke="#b9975e" strokeWidth=".035" strokeDasharray=".15 .1" />}
+    {h.rooms.map((r)=><g key={r.id}><rect x={r.x} y={r.y} width={r.width} height={r.depth} fill={colours[r.type]||'#eee5d2'} />{r.type==='bathroom'&&<rect x={r.x} y={r.y} width={r.width} height={r.depth} fill={`url(#${tileId})`} />}<Furniture room={r} />{r.type==='stairs'&&<StairSymbol room={r}/>} {r.addition&&<rect x={r.x+.16} y={r.y+.16} width={r.width-.32} height={r.depth-.32} fill="none" stroke="#b9975e" strokeWidth=".035" strokeDasharray=".15 .1" />}
       {r.type==='hall'?<text x={r.x+r.width/2} y={r.y+r.depth/2} textAnchor="middle" fontSize=".23" fill="#657457" transform={r.depth>r.width?`rotate(-90 ${r.x+r.width/2} ${r.y+r.depth/2})`:undefined}>{r.name.toUpperCase()} / {Math.min(r.width,r.depth).toFixed(1)} m</text>:<><text x={r.x+r.width/2} y={r.y+.4} textAnchor="middle" fontSize={Math.min(.29,r.width/(r.name.length*.65))} fontWeight="600" fill="#2c4034">{r.name}</text><text x={r.x+r.width/2} y={r.y+.73} textAnchor="middle" fontSize=".22" fill="#677263">{r.width.toFixed(1)} x {r.depth.toFixed(1)} m</text></>}
     </g>)}
     {wallPieces(h.walls,[...h.doors,...h.windows]).map(({w,t,s,e},i)=>{const [x,y]=toXY(w.axis,s,lineOf(w)-t/2),[width,height]=toXY(w.axis,e-s,t);return <rect key={i} x={x} y={y} width={width} height={height} fill={INK} />;})}
     {h.doors.map((d,i)=><Door key={i} door={d} t={openingThickness(h.walls,d)} />)}
     {h.windows.map((w,i)=><Window key={i} window={w} t={openingThickness(h.walls,w)} />)}
-    <circle {...(()=>{const [cx,cy]=toXY(entrance.axis,startOf(entrance)+entrance.length/2,lineOf(entrance)-entrance.swing*.45);return {cx,cy};})()} r=".14" fill="#d1a55d" stroke="#fff" strokeWidth=".04" />
-    <text x={h.width/2} y="-1.4" textAnchor="middle" fontSize=".25" fill="#52674d">{h.template.name.toUpperCase()} / ROAD: {h.entranceEdge.toUpperCase()}</text>
+    {entrance&&<circle {...(()=>{const [cx,cy]=toXY(entrance.axis,startOf(entrance)+entrance.length/2,lineOf(entrance)-entrance.swing*.45);return {cx,cy};})()} r=".14" fill="#d1a55d" stroke="#fff" strokeWidth=".04" />}
+    <text x={h.width/2} y="-1.4" textAnchor="middle" fontSize=".25" fill="#52674d">{h.floorName?h.floorName.toUpperCase():`${h.template.name.toUpperCase()} / ROAD: ${h.entranceEdge.toUpperCase()}`}</text>
     <text x={h.width/2} y={drawLength+.75} textAnchor="middle" fontSize=".22" fill="#786d58">GOLD DOT: ENTRANCE / DASHED ROOMS: REQUESTED ADDITIONS</text>
     <text x={h.width+.55} y={h.length/2} textAnchor="middle" fontSize=".28" fill="#52674d" transform={`rotate(90 ${h.width+.55} ${h.length/2})`}>{h.length.toFixed(1)} m</text>
   </svg>;
 }
 
-export function HousePreview({ house:h,roofVisible }) {
+export function HousePreview(props) {
+  return props.house.floors?<MultiStoreyDrawing {...props}/>:<SingleHousePreview {...props}/>;
+}
+
+function SingleHousePreview({ house:h,roofVisible }) {
   const project=(x,y,z=0)=>[x*22+y*15,x*10-y*9-z*24];
   const polygon=points=>points.map(([x,y,z])=>project(x,y,z).join(',')).join(' ');
   const surfaces=[...roofPanels(h),...roofEdgeFaces(h)],minY=-h.length*9-145;

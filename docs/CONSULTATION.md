@@ -63,7 +63,7 @@ Site-plan and reference-image uploads may be added later. The initial workflow m
 | Accessibility need | What specific access is needed? | Explicit supported constraints plus recorded review needs. |
 | Low budget relative to requested rooms | Which optional features can change? | User-authorised revisions; never automatic removal of essentials. |
 | Future extension | Which spaces may expand? | Recorded extension intention; supported reserved-space preference where available. |
-| Unsupported site/building request | Can the project use the supported rectangular, single-storey scope? | Explicit scope decision, or project retained without generation. |
+| Unsupported site/building request | Can the project use the supported rectangular, one-to-three-storey scope? | Explicit scope decision, or project retained without generation. |
 
 ## Brief contract
 
@@ -88,3 +88,6 @@ This is illustrative input, not a claim that the budget can fund this house. Gen
 ## Revisions and conflicts
 
 Editing a confirmed brief creates a new draft. Previous designs retain the original brief version. A conflict response identifies the requirement IDs involved, whether the cause is unsupported scope, spatial validation, budget, or search exhaustion, and possible user-approved changes. Revised essentials require explicit reconfirmation before generation.
+
+
+Multi-storey implementation update: see [MULTI_STOREY.md](MULTI_STOREY.md) for the current per-floor contract, stairs, source limitations, costing assumptions and verification. Legacy single-storey descriptions elsewhere in this document describe the earlier baseline.

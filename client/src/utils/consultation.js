@@ -47,7 +47,7 @@ export function consultationProgress(steps, answers) {
   };
 }
 
-const LAYOUT_KEYS = ['bedrooms', 'bathrooms', 'kitchen', 'style', 'roofForm', 'spaceLevel', 'homeFeatures', 'layoutPreference'];
+const LAYOUT_KEYS = ['storeys', 'bedrooms', 'bathrooms', 'kitchen', 'style', 'roofForm', 'spaceLevel', 'homeFeatures', 'layoutPreference'];
 const SITE_KEYS = ['width', 'length', 'access'];
 export function questionImpact(question) {
   if (LAYOUT_KEYS.includes(question.key)) return { kind: 'layout', label: 'Shapes your concept' };

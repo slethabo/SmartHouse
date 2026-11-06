@@ -4,6 +4,8 @@
 
 SmartHouse is being redesigned as a personalised architectural design and cost planning platform. These specifications follow the [revised proposal](SmartHouse_Revised_Project_Proposal.md).
 
+See [multi-storey implementation](MULTI_STOREY.md) for the implemented 1/2/3-storey extension.
+
 ## Reading order
 
 For the active frontend-only implementation and prototype limitations, see [prototype progress](PROTOTYPE_PROGRESS.md). The specifications below remain the broader target; the initial implementation deliberately uses simple schematic concepts.
@@ -45,6 +47,6 @@ All initial deliverables are concept designs. Supported spatial checks and prici
 
 ## Agreed initial boundaries
 
-Rectangular plots; single-storey homes; a documented selection of rooms, styles, roofs, and finishes; one documented pricing context and currency; bounded generation. Reusable room components may be assembled into different arrangements. Complete predefined houses are not the core generation mechanism. Similar briefs can produce similar houses.
+Rectangular plots; one-to-three-storey homes; a documented selection of rooms, styles, roofs, and finishes; one documented pricing context and currency; bounded generation. Reusable room components may be assembled into different arrangements. Complete predefined houses are not the core generation mechanism. Similar briefs can produce similar houses.
 
 Do not change these scope boundaries, claim regulatory compliance, or mark a planned requirement complete without updating the linked specifications and recording validation evidence.

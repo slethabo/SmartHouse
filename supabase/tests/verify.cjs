@@ -59,6 +59,8 @@ async function main() {
     await db.query(fs.readFileSync(path.join(root,'schema.sql'),'utf8'));
     await db.query(fs.readFileSync(path.join(root,'storage.sql'),'utf8'));
     await db.query(fs.readFileSync(path.join(root,'verify.sql'),'utf8'));
+    await db.query(fs.readFileSync(path.join(root,'upgrade-multi-storey.sql'),'utf8'));
+    await db.query(fs.readFileSync(path.join(root,'upgrade-multi-storey.sql'),'utf8'));
     check('schema/storage SQL and security audit execute successfully');
     assert.equal((await db.query('select count(*)::int n from public.profiles')).rows[0].n,1);
     check('existing Auth users are backfilled');
@@ -100,6 +102,11 @@ async function main() {
     const brief = (await db.query('select * from public.confirm_design_brief($1,1,true)',[project.id])).rows[0];
     assert.equal((await db.query('select * from public.confirm_design_brief($1,1,true)',[project.id])).rows[0].id,brief.id);
     check('required answers, acknowledgements, stale saves and confirmations, idempotent brief confirmation');
+    await rejected('select public.save_consultation_draft($1,1,$2)',[project.id,JSON.stringify({...answers,storeys:4})],/Storeys/);
+    await db.query('select public.save_consultation_draft($1,1,$2)',[project.id,JSON.stringify({...answers,storeys:3})]);
+    const multiBrief=(await db.query('select * from public.confirm_design_brief($1,2,true)',[project.id])).rows[0];
+    assert.equal(multiBrief.answers.storeys,3);
+    check('additive multi-storey upgrade is repeatable, rejects invalid storeys and preserves the confirmed choice');
 
     await session('authenticated',bob);
     assert.equal((await db.query('select public.my_role() role')).rows[0].role,'homeowner');

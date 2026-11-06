@@ -11,10 +11,11 @@ export default function House3DView({ house }) {
   const [error, setError] = useState('');
   const [cutaway, setCutaway] = useState(false);
   const [retry, setRetry] = useState(0);
+  const [floorSelection,setFloorSelection]=useState('all');
   useEffect(() => {
     const host = mount.current;
     let renderer, scene, controls, observer;
-    setReady(false); setError(''); setCutaway(false);
+    setReady(false); setError(''); setCutaway(false);setFloorSelection('all');
     const cleanup = () => {
       observer?.disconnect(); controls?.dispose();
       if (scene) disposeHouseModel(scene);
@@ -53,21 +54,26 @@ export default function House3DView({ house }) {
       }
       controls = new OrbitControls(camera, renderer.domElement);
       controls.enablePan = false; controls.maxPolarAngle = Math.PI / 2 - .04; controls.minPolarAngle = .05;
-      const radius = Math.hypot(house.width, house.length);
+      const buildingHeight=(house.storeys||1)*(house.floorHeight||3.2);
+      let focusY=buildingHeight/2;
+      const radius = Math.hypot(house.width, house.length,buildingHeight);
       controls.minDistance = radius * .45; controls.maxDistance = radius * 4;
       controls.target.set(0,1,0);
       const render = () => { if (host.clientWidth > 0) renderer.render(scene,camera); };
       const preset = (name) => {
         const distance = radius * 1.25 / Math.min(1, camera.aspect);
-        if (name === 'front') camera.position.set(0,5,-distance);
-        else if (name === 'top') camera.position.set(0,distance,.01);
-        else camera.position.set(distance * .65,distance * .55,-distance * .75);
-        controls.target.set(0,1,0); controls.update(); render();
+        if (name === 'front') camera.position.set(0,focusY+3,-distance);
+        else if (name === 'top') camera.position.set(0,focusY+distance,.01);
+        else camera.position.set(distance * .65,focusY+distance * .55,-distance * .75);
+        controls.target.set(0,focusY,0); controls.update(); render();
       };
       const resize = () => { const w = host.clientWidth, h = host.clientHeight; if (!w || !h) return; renderer.setSize(w,h,false); camera.aspect = w/h; camera.updateProjectionMatrix(); render(); };
       controls.addEventListener('change',render);
       observer = new ResizeObserver(resize); observer.observe(host); resize(); preset('angle');
-      viewer.current = { preset, render, model, rotate: (direction) => { const offset = camera.position.clone().sub(controls.target); offset.applyAxisAngle(new THREE.Vector3(0,1,0), direction * Math.PI / 6); camera.position.copy(controls.target).add(offset); controls.update(); }, zoom: (factor) => { const offset = camera.position.clone().sub(controls.target); offset.setLength(THREE.MathUtils.clamp(offset.length() * factor, controls.minDistance, controls.maxDistance)); camera.position.copy(controls.target).add(offset); controls.update(); } };
+      viewer.current = { preset, render, model,
+        focusFloor(level){model.setFloor(level);focusY=level*house.floorHeight+.7;preset('top');},
+        showAll(){model.showAll();focusY=buildingHeight/2;preset('angle');},
+        rotate: (direction) => { const offset = camera.position.clone().sub(controls.target); offset.applyAxisAngle(new THREE.Vector3(0,1,0), direction * Math.PI / 6); camera.position.copy(controls.target).add(offset); controls.update(); }, zoom: (factor) => { const offset = camera.position.clone().sub(controls.target); offset.setLength(THREE.MathUtils.clamp(offset.length() * factor, controls.minDistance, controls.maxDistance)); camera.position.copy(controls.target).add(offset); controls.update(); } };
       setReady(true);
     } catch {
       cleanup(); setError('3D graphics are unavailable in this browser. You can still explore the front and side exterior previews.');
@@ -77,10 +83,19 @@ export default function House3DView({ house }) {
   function toggleRoof() {
     const v = viewer.current; if (!v) return;
     const next = !cutaway; setCutaway(next);
+    if(v.model.setFloor){
+      if(next){setFloorSelection(String(house.storeys-1));v.focusFloor(house.storeys-1);}
+      else{setFloorSelection('all');v.showAll();}
+      return;
+    }
     v.model.roof.visible = !next; v.model.exterior.scale.y = next ? .28 : 1; v.model.interior.scale.y = next ? .3 : 1;
     if (next) v.preset('top'); else v.preset('angle'); v.render();
   }
   return <div className="house-3d-view"><div className="house-3d-toolbar"><div className="house-angle-switch" aria-label="3D camera views">{[['angle','Overview'],['front','Front'],['top','Above']].map(([key,label]) => <button key={key} type="button" disabled={!ready} onClick={() => viewer.current?.preset(key)}>{label}</button>)}</div><button type="button" className="btn btn--secondary btn--sm" disabled={!ready} aria-pressed={cutaway} onClick={toggleRoof}>{cutaway ? 'Replace roof' : 'Remove roof'}</button></div>
+    {house.floors&&<label className="house-floor-selector">Inspect floor <select aria-label="Inspect floor in 3D" value={floorSelection} disabled={!ready} onChange={e=>{
+      const value=e.target.value;setFloorSelection(value);setCutaway(value!=='all');
+      if(value==='all')viewer.current.showAll();else viewer.current.focusFloor(Number(value));
+    }}><option value="all">Whole building</option>{house.floors.map(f=><option key={f.id} value={f.level}>{f.name}</option>)}</select></label>}
     <div className="house-3d-canvas" ref={mount} hidden={Boolean(error)} />
     {!ready && !error && <p role="status">Preparing your 3D home...</p>}
     {error && <div className="house-3d-fallback"><p role="status">{error}</p><button type="button" className="btn btn--secondary" onClick={() => setRetry((n) => n + 1)}>Retry 3D</button><HouseElevation house={house} /></div>}

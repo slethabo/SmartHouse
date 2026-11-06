@@ -57,3 +57,6 @@ Keep current users and prototype data. Introduce versioned additive migrations a
 ## Proposed final demonstration
 
 Create a project, answer architect-style questions, confirm a brief, generate options, explore matching plan/model/costs, change an optional need, compare versions, and download a selected concept. Show one conflicting brief and one bounded-search outcome. Finish with an administrator publishing a new pricing release and demonstrate that an older saved estimate retains its original assumptions.
+
+
+Multi-storey implementation update: see [MULTI_STOREY.md](MULTI_STOREY.md) for the current per-floor contract, stairs, source limitations, costing assumptions and verification. Legacy single-storey descriptions elsewhere in this document describe the earlier baseline.

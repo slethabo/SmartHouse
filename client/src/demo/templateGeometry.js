@@ -47,16 +47,17 @@ export function roomBoundaries(rooms) {
   return walls;
 }
 
-export function connectRooms({rooms},entranceRoomId) {
+export function connectRooms({rooms,externalEntrance=true},entranceRoomId) {
   const walls=roomBoundaries(rooms),edges=[];
   for(let i=0;i<rooms.length;i++)for(let j=i+1;j<rooms.length;j++){
     const a=rooms[i],b=rooms[j];
+    if((a.accessVia&&a.accessVia!==b.id)||(b.accessVia&&b.accessVia!==a.id))continue;
     if((a.privateTo&&a.privateTo!==b.id)||(b.privateTo&&b.privateTo!==a.id))continue;
     const dy=Math.min(a.y+a.depth,b.y+b.depth)-Math.max(a.y,b.y),dx=Math.min(a.x+a.width,b.x+b.width)-Math.max(a.x,b.x);
     let e;
     if(dy>=1.1&&(Math.abs(a.x+a.width-b.x)<EPS||Math.abs(b.x+b.width-a.x)<EPS))e={axis:'y',x:Math.max(a.x,b.x),y:Math.max(a.y,b.y),span:dy};
     if(dx>=1.1&&(Math.abs(a.y+a.depth-b.y)<EPS||Math.abs(b.y+b.depth-a.y)<EPS))e={axis:'x',x:Math.max(a.x,b.x),y:Math.max(a.y,b.y),span:dx};
-    if(e){const pub=['living','kitchen','dining','entertainment','hall'];
+    if(e){const pub=['living','kitchen','dining','entertainment','hall','stairs'];
       edges.push({...e,a,b,open:pub.includes(a.type)&&pub.includes(b.type)&&(a.type!=='kitchen'||a.openKitchen)&&(b.type!=='kitchen'||b.openKitchen),
         priority:a.type==='hall'||b.type==='hall'?0:pub.includes(a.type)||pub.includes(b.type)?1:2});}
   }
@@ -92,7 +93,7 @@ export function connectRooms({rooms},entranceRoomId) {
     doors.push({axis:w.axis,x:round(w.x+(w.axis==='x'?offset:0)),y:round(w.y+(w.axis==='y'?offset:0)),length:round(size),
       edge:w.edge,entrance:false,garage:true,connects:['outside',r.id]});
   };
-  opening(rooms.find(r=>r.id===entranceRoomId));
+  if(externalEntrance)opening(rooms.find(r=>r.id===entranceRoomId));
   rooms.filter(r=>r.type==='garage').forEach(r=>opening(r,true));
   const windows=[];
   for(const r of rooms){
