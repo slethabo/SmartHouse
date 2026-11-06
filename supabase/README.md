@@ -31,6 +31,24 @@ access. `my_role()` returns the current authenticated user's role; user metadata
 cannot grant privileges. An admin can publish pricing releases but cannot browse
 other homeowners' projects. SQL Editor/service-role access is privileged.
 
+Each selected administrator uses the same email/password account for both views.
+They start in the user view and can choose **Switch to Admin** to open management,
+then **Switch to User** to return to their projects. The view follows the URL and
+survives a refresh; switching does not change role membership or create a session.
+Regular users have no switch and cannot enter `/admin`. After changing membership,
+refresh the app or log in again to reload `my_role()`.
+
+To revoke one selected account, run this as `postgres` in SQL Editor, replacing
+the example email with that person's registered address:
+
+```sql
+delete from private.administrators
+where user_id in (
+  select id from auth.users where lower(email) = lower('your-team-email@example.com')
+)
+returning user_id;
+```
+
 ## Tables and relationships
 
 | Table | Purpose |

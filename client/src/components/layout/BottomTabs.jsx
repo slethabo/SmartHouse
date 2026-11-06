@@ -8,7 +8,8 @@ export function BottomTabs() {
   const { user, isAdmin } = useAuth();
   const location = useLocation();
   if (!user) return null;
-  const items = NAV_ITEMS.filter((i) => !i.adminOnly || isAdmin);
+  const adminView = isAdmin && (location.pathname === '/admin' || location.pathname.startsWith('/admin/'));
+  const items = NAV_ITEMS.filter((i) => i.adminOnly ? adminView : !adminView);
   return (
     <nav className="tabbar" aria-label="Main (mobile)">
       {items.map((item) => (

@@ -18,8 +18,8 @@ export function TopNav({ onOpenHelp }) {
   const [loggingOut, setLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState('');
   const location = useLocation();
-
-  const items = NAV_ITEMS.filter((i) => !i.adminOnly || isAdmin);
+  const adminView = isAdmin && (location.pathname === '/admin' || location.pathname.startsWith('/admin/'));
+  const items = NAV_ITEMS.filter((i) => i.adminOnly ? adminView : !adminView);
   async function signOut() {
     setLoggingOut(true); setLogoutError('');
     try { await logout(); }
@@ -55,6 +55,8 @@ export function TopNav({ onOpenHelp }) {
             </span>
           </Button>
           {user && <span className="topnav__identity" title={user.full_name || 'Your workspace'}><span className="topnav__avatar" aria-hidden="true">{(user.full_name || 'Your workspace').trim().split(/\s+/).slice(0, 2).map((name) => name[0]).join('')}</span><span>{cloudMode ? (user.full_name?.split(' ')[0] || 'My account') : 'Demo workspace'}</span></span>}
+          <span className="badge badge--info">{isAdmin ? adminView ? 'Admin view' : 'User view' : cloudMode ? 'Cloud projects' : 'Local prototype'}</span>
+          {user && isAdmin && <Button to={adminView ? '/' : '/admin'} variant="secondary" size="sm" icon={adminView ? 'house' : 'sliders'}>{adminView ? 'Switch to User' : 'Switch to Admin'}</Button>}
           {cloudMode && (user ? <Button variant="secondary" size="sm" loading={loggingOut} onClick={signOut}>{STRINGS.app.logout}</Button> : <>{location.pathname !== '/login' && <Button to="/login" variant="ghost" size="sm">Log in</Button>}{location.pathname !== '/register' && <Button to="/register" size="sm">Create account</Button>}</>)}
         </div>
       </div>

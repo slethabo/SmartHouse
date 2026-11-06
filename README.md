@@ -59,6 +59,10 @@ In cloud mode, projects, draft answers, revision numbers and immutable confirmed
 
 Admin navigation is granted only by the protected `my_role()` database RPC. User metadata cannot assign admin rights. To promote a registered user, use the SQL in `supabase/README.md`; the retained management screen still controls only the browser-local reference catalogue. Existing anonymous sessions can link an email from `/register`, confirm it, then choose a password while retaining their project ownership. This legacy conversion requires Supabase manual identity linking to be enabled. Logging into a separate account does not merge anonymous projects.
 
+Selected administrators can use **Switch to Admin / Switch to User** with the same
+account. This changes the visible workspace and navigation; database permissions
+stay tied to trusted administrator membership. All other accounts have user access.
+
 The reference design catalogue, favourites, demo rate controls, generated visual previews, and SVG/JSON downloads remain browser-based. Signed-in accounts have separate local favourites, demo catalogue state and search history. Persisting generated geometry, estimate snapshots, Storage assets and export jobs requires the trusted generation backend described in `supabase/README.md`; this adapter does not grant browser writes to those protected tables.
 
 Use `VITE_DATA_SOURCE=local` to select the original offline demo. With no Supabase configuration at all, the app also defaults to local mode.
