@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { placeFurniture } from '../../demo/furniture';
-import { roofPanels, exteriorHeight } from '../../demo/architecture';
+import { roofPanels, exteriorWallProfile, roofEdgeFaces } from '../../demo/architecture';
 
 const colours = { living: '#e7eddb', kitchen: '#e7eddb', bedroom: '#f2e9d7', bathroom: '#dfeaf0', office: '#e6e2ed', utility: '#e9e9e2', hall: '#f9f8f2', dining: '#efe3cd', entertainment: '#e2decf', dressing: '#e8dcca', garage: '#d5d9d7' };
 function Furniture({ room }) {
@@ -104,11 +104,12 @@ export function FloorPlan({ house: h }) {
 export function HousePreview({ house:h,roofVisible }) {
   const project=(x,y,z=0)=>[x*22+y*15,x*10-y*9-z*24];
   const polygon=points=>points.map(([x,y,z])=>project(x,y,z).join(',')).join(' ');
-  const surfaces=roofPanels(h),minY=-h.length*9-145;
+  const surfaces=[...roofPanels(h),...roofEdgeFaces(h)],minY=-h.length*9-145;
   const depth=p=>p.reduce((sum,[x,y])=>sum+y-x,0)/p.length;
   const walls=h.walls.filter(w=>w.exterior&&['front','right'].includes(w.edge)).map(w=>{
     const endX=w.x+(w.axis==='x'?w.length:0),endY=w.y+(w.axis==='y'?w.length:0);
-    return {w,points:[[w.x,w.y,0],[endX,endY,0],[endX,endY,roofVisible?exteriorHeight(h,w,endX):.4],[w.x,w.y,roofVisible?exteriorHeight(h,w):.4]]};
+    const profile=roofVisible?exteriorWallProfile(h,w):[{offset:0,height:.4},{offset:w.length,height:.4}];
+    return {w,points:[[w.x,w.y,0],[endX,endY,0],...profile.slice().reverse().map(p=>[w.x+(w.axis==='x'?p.offset:0),w.y+(w.axis==='y'?p.offset:0),p.height])]};
   }).sort((a,b)=>depth(b.points)-depth(a.points));
   return <svg className="house-exterior" role="img" aria-label={`${h.template.name}: ${roofVisible?h.roofDesign+' exterior':'floor-plan cutaway'}, following the actual footprint and setbacks.`} viewBox={`-85 ${minY} ${h.width*22+h.length*15+190} ${h.length*9+h.width*10+220}`}>
     <polygon points={polygon([[-2,-3,0],[h.width+2,-3,0],[h.width+2,h.length+2,0],[-2,h.length+2,0]])} fill="#e3e9d9" />

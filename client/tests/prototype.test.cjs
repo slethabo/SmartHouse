@@ -25,11 +25,11 @@ const estimatorBundle = buildSync({ entryPoints: [path.join(__dirname, '../src/d
 const estimatorModule = new Module(__filename);
 estimatorModule._compile(estimatorBundle.outputFiles[0].text, __filename);
 const { estimateHouseFromCatalogue } = estimatorModule.exports;
-const modelBundle = buildSync({ stdin: { contents: 'export * from "./houseModel.js"; export * from "./architecture.js"; export * as THREE from "three";', resolveDir: path.join(__dirname, '../src/demo'), sourcefile: 'model-test-entry.js' }, bundle: true, platform: 'node', format: 'cjs', write: false });
+const modelBundle = buildSync({ stdin: { contents: 'export * from "./houseModel.js"; export * from "./architecture.js"; export * from "./roofGeometry.js"; export * as THREE from "three";', resolveDir: path.join(__dirname, '../src/demo'), sourcefile: 'model-test-entry.js' }, bundle: true, platform: 'node', format: 'cjs', write: false });
 const modelModule = new Module(__filename);
 modelModule.paths = module.paths;
 modelModule._compile(modelBundle.outputFiles[0].text, __filename);
-const { buildHouseModel, disposeHouseModel, roofPanels, roofSections, THREE } = modelModule.exports;
+const { buildHouseModel, disposeHouseModel, roofPanels, roofSections, roofHeightAt, exteriorWallProfile, polygonArea, clipPolygon, roofPlane, planeHeight, THREE } = modelModule.exports;
 const answers = { location: 'Demo', width: 20, length: 30, shape: 'Rectangular', terrain: 'Flat', access: 'South', budget: 1500000, finish: 'Basic', budgetIncludes: ['Labour', 'Materials'], occupants: 4, bedrooms: 3, bathrooms: 2, workFromHome: 'No', guests: 'Rarely', kitchen: 'Open plan', style: 'Modern', privacy: 'No preference', accessibility: 'None stated' };
 beforeEach(() => {
   const storage = new Map();
@@ -265,14 +265,50 @@ test('roof algorithm partitions the footprint without gaps and follows explicit 
     const modelRooms=new Set(model.roof.children.filter(mesh=>mesh.name.startsWith('roof:')).flatMap(mesh=>mesh.userData.roomIds));
     assert.equal(modelRooms.size,house.rooms.length,'Roof section metadata must account for every room');
     if(roofForm==='Intersecting gables'){
-      const gableEnds=model.exterior.children.filter(mesh=>mesh.name==='gable-end');
-      assert.equal(gableEnds.length,sections.length*4,'Each gable section must have two end faces built as front and back surfaces');
+      assert.equal(model.exterior.children.filter(mesh=>mesh.name==='wall').length,house.walls.filter(w=>w.exterior).length,'Only actual exposed building walls receive gable infill');
     }
     model.root.traverse((object)=>{
       const positions=object.geometry?.getAttribute('position');
       if(positions)assert.ok(Array.from(positions.array).every(Number.isFinite));
     });
     disposeHouseModel(model.root);
+  }
+});
+
+test('six-bedroom roofs have no overlapping faces and exterior walls stay below the roof along their full length', () => {
+  const cross=(a,b,p)=>(b[0]-a[0])*(p[1]-a[1])-(b[1]-a[1])*(p[0]-a[0]);
+  const contains=(points,p)=>points.every((a,i)=>cross(a,points[(i+1)%points.length],p)>1e-7);
+  for(const layoutPreference of ['Linear living','Split living','Wide family residence'])for(const roofForm of ['Intersecting gables','Multi-hip']){
+    const house=createHouseConcept({...answers,bedrooms:6,bathrooms:3,layoutPreference,roofForm});
+    const panels=roofPanels(house),sections=roofSections(house);
+    for(const [i,panel] of panels.entries()){
+      assert.ok(polygonArea(panel.points)>0);
+      const centroid=panel.points.reduce((p,q)=>[p[0]+q[0]/panel.points.length,p[1]+q[1]/panel.points.length],[0,0]);
+      assert.ok(Math.abs(planeHeight(roofPlane(panel.points),...centroid)-roofHeightAt(house,...centroid))<1e-5,'Visible roof faces must lie on the upper roof surface');
+      for(const other of panels.slice(i+1)){
+        let overlap=panel.points;
+        for(let edge=0;edge<other.points.length&&overlap.length;edge++)overlap=clipPolygon(overlap,p=>cross(other.points[edge],other.points[(edge+1)%other.points.length],p));
+        assert.ok(!overlap.length||Math.abs(polygonArea(overlap))<1e-6,'Resolved roof faces must not overlap in plan');
+      }
+    }
+    for(let ix=0;ix<35;ix++)for(let iy=0;iy<35;iy++){
+      const x=(ix+.371)*house.width/35,y=(iy+.619)*house.length/35;
+      const expected=sections.some(s=>x>s.x0&&x<s.x1&&y>s.y0&&y<s.y1);
+      assert.equal(panels.filter(p=>contains(p.points,[x,y])).length,expected?1:0,'Trimming must leave no roof gaps or duplicate faces');
+    }
+    for(const wall of house.walls.filter(w=>w.exterior)){
+      const profile=exteriorWallProfile(house,wall);
+      for(let i=0;i<profile.length-1;i++)for(let sample=0;sample<=4;sample++){
+        const t=sample/4,offset=profile[i].offset+(profile[i+1].offset-profile[i].offset)*t;
+        const height=profile[i].height+(profile[i+1].height-profile[i].height)*t;
+        const x=wall.x+(wall.axis==='x'?offset:0),y=wall.y+(wall.axis==='y'?offset:0);
+        const roof=roofHeightAt(house,x,y)-.12;
+        assert.ok(height<=roof+1e-5,'Wall profiles must never protrude above the roof');
+        if(profile[i+1].offset-profile[i].offset>1e-6&&sample>0&&sample<4)assert.ok(Math.abs(height-roof)<1e-5,'Wall spans must follow their roof plane; junction steps are vertical');
+      }
+    }
+    const estimate=estimateHouseFromCatalogue(house,house.rate,JSON.parse(fs.readFileSync(path.join(__dirname,'../../smart_house_products.json'),'utf8')),JSON.parse(fs.readFileSync(path.join(__dirname,'../src/demo/material_price_benchmarks.json'),'utf8')));
+    assert.ok(Number.isFinite(estimate.total)&&estimate.total>0,'Both roof forms must remain priceable after polygon trimming');
   }
 });
 

@@ -23,7 +23,7 @@ function buildCandidate(answers,template) {
   if (ensuite&&sharedBaths===0) notes.push('Your only bathroom is the main en-suite. Increase the bathroom count if you need a shared bathroom.');
   const unlit=rooms.filter((r)=>['bedroom','bathroom','office'].includes(r.type)&&!geometry.windows.some((w)=>w.roomId===r.id));
   if (unlit.length) notes.push(`${unlit.map((r)=>r.name).join(', ')} need a daylight/ventilation review.`);
-  return {schemaVersion:5,generatorVersion:'source-plans-v4-roof-sections',packing:'source-core-with-additions',terraces:layout.terraces,
+  return {schemaVersion:5,generatorVersion:'source-plans-v5-joined-roofs',packing:'source-core-with-additions',terraces:layout.terraces,
     roofForm,roofDesign,siteWidth,siteDepth,
     layoutDescription:template.description,
     width,length,wall,rooms,...geometry,footprintArea,

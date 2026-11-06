@@ -67,7 +67,7 @@ function buildBreakdown(total) {
 
 const CATALOGUE_PRODUCTS = Object.freeze([
   { id: 133, key: 'bricks', label: 'Exterior wall bricks', unit: 'each', kind: 'brick', assumption: '2.8 m wall height; openings deducted; 50 bricks/m² plus 5% waste.' },
-  { id: 412, key: 'concrete', label: 'Concrete slab mix', unit: 'm³', kind: 'concrete', assumption: '100 mm slab thickness over the gross floor area.' },
+  { id: 412, key: 'concrete', label: 'Concrete slab mix', unit: 'm³', kind: 'concrete', assumption: '100 mm slab thickness over the enclosed room area.' },
   { id: 9882, key: 'gutters', label: 'Domestic gutters (6 m lengths)', unit: '6 m length', kind: 'gutter', assumption: 'One eave for mono-pitch, two for gable; flat roof excludes gutters.' },
 ]);
 
@@ -93,8 +93,9 @@ function triangleArea3D(a, b, c) {
 
 function getRoofSurfaceArea(house) {
   return roofPanels(house).reduce((area, panel) => {
-    const [a, b, c, d] = panel.points;
-    return area + triangleArea3D(a, b, c) + triangleArea3D(a, c, d);
+    const [a,...rest]=panel.points;
+    for(let i=0;i<rest.length-1;i++)area+=triangleArea3D(a,rest[i],rest[i+1]);
+    return area;
   }, 0);
 }
 
@@ -179,8 +180,8 @@ function estimateHouseFromCatalogue(house, ratePerM2, products, benchmarks) {
   const insulationCoverage = positiveNumber(benchmarks.rates.roofInsulation?.coverageM2, 'Roof insulation coverage');
   const researchLines = [
     makeBenchmarkLine('windows', +windowArea.toFixed(2), `Total generated window area; rate is normalized from standard 1200 x 1200 mm aluminium windows.`),
-    makeBenchmarkLine('ceilingBoards', Math.ceil(area / ceilingCoverage), `Gross floor area divided by ${ceilingCoverage} m² sheet coverage; rounded up.`),
-    makeBenchmarkLine('roofInsulation', Math.ceil(area / insulationCoverage), `Gross floor area divided by ${insulationCoverage} m² roll coverage; rounded up.`),
+    makeBenchmarkLine('ceilingBoards', Math.ceil(area / ceilingCoverage), `Enclosed room area divided by ${ceilingCoverage} m² sheet coverage; rounded up.`),
+    makeBenchmarkLine('roofInsulation', Math.ceil(area / insulationCoverage), `Enclosed room area divided by ${insulationCoverage} m² roll coverage; rounded up.`),
   ];
   if (!flatRoof && roofArea > 0) {
     const sheetCoverage = positiveNumber(benchmarks.rates.roofSheets.coverageM2, 'Roof sheet coverage');

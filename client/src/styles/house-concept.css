@@ -53,6 +53,7 @@
 .hc-budget strong { display: block; font-size: .72rem; font-weight: 650; }
 .hc-budget span { display: block; font-size: .64rem; margin-top: 4px; line-height: 1.6; }
 .hc-budget--over { color: #8a4930; background: #fcf0e5; }
+.hc-budget p { margin: 7px 0 0; font-size: .72rem; line-height: 1.6; }
 .home-concept .btn--primary { background: #28563e; border-color: #28563e; color: white; }
 .home-concept .btn--primary:hover { background: #1c402d; }
 .home-concept .btn--secondary { background: transparent; border-color: #c8d1c1; color: #31543d; }

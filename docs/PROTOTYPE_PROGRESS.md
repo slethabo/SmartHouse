@@ -1,5 +1,19 @@
 # Frontend Prototype Progress
 
+## Latest correction: joined roofs and wall profiles
+
+The roof/wall artifacts seen in the six-bedroom preview were traced to midpoint
+wall-height samples and full gable faces at internal roof partition ends. Walls
+now follow actual piecewise roof profiles; overlapping roof faces are clipped at
+intersection lines. Eave and stepped-junction closures and roof details use those
+trimmed patches. The correction also fixes Multi-hip pricing for triangular roof
+faces. The generated version is `source-plans-v5-joined-roofs` (schema 5).
+
+The summary now labels the calculated area as enclosed room area and explains
+that walls/terraces are excluded. Over-budget results explicitly state that the
+layout does not meet the budget. Existing confirmed briefs regenerate the view;
+no cloud records are rewritten by this correction.
+
 ## Latest: architectural floor-plan symbols
 
 *Author: Lethabo Sangweni (November 2026)*

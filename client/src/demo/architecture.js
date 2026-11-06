@@ -1,4 +1,8 @@
+import { cleanPolygon, resolveRoofPanels, roofPlane, planeHeight, lineInterval } from './roofGeometry';
 const EAVE_HEIGHT = 2.9;
+const panelCache=new WeakMap();
+const sectionCache=new WeakMap();
+const edgeCache=new WeakMap();
 const ROOF_OVERHANG = 0.3;
 const ROOF_PITCH = Math.tan(Math.PI / 6);
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -89,9 +93,10 @@ function partitionFootprint(rooms) {
 }
 
 export function roofSections(house) {
+  if(sectionCache.has(house))return sectionCache.get(house);
   const form = resolveRoofForm(house);
   const partition = partitionFootprint(house.rooms);
-  return partition.sections.map((section, index) => {
+  const sections=partition.sections.map((section, index) => {
     const x0 = section.x0 - ROOF_OVERHANG;
     const x1 = section.x1 + ROOF_OVERHANG;
     const y0 = section.y0 - ROOF_OVERHANG;
@@ -119,6 +124,7 @@ export function roofSections(house) {
       roomIds: section.roomIds,
     };
   });
+  sectionCache.set(house,sections);return sections;
 }
 
 function sectionHeight(section, x, y) {
@@ -146,7 +152,7 @@ function point(x, y, z) {
   return [x, y, z];
 }
 
-export function roofPanels(house) {
+function rawRoofPanels(house) {
   return roofSections(house).flatMap((section) => {
     const { x0, x1, y0, y1, ridgeAxis, ridgeCoordinate, ridgeStart, ridgeEnd, eaveHeight, ridgeHeight } = section;
     if (section.form === 'Intersecting gables') {
@@ -175,7 +181,86 @@ export function roofPanels(house) {
 }
 
 export function exteriorHeight(house, wall, x, y) {
-  const px = x ?? wall.x + (wall.axis === 'x' ? wall.length / 2 : 0);
-  const py = y ?? wall.y + (wall.axis === 'y' ? wall.length / 2 : 0);
+  const px = x ?? wall.x;
+  const py = y ?? wall.y;
   return roofHeightAt(house, px, py) - .12;
+}
+
+export function roofPanels(house) {
+  if(!panelCache.has(house))panelCache.set(house,resolveRoofPanels(rawRoofPanels(house)));
+  return [...panelCache.get(house)];
+}
+
+/** Include all roof-plane crossings so a wall follows ridges and valleys, not a
+ * straight line between samples that could cut through a lower roof in between.
+ */
+export function exteriorWallProfile(house,wall) {
+  const dx=wall.axis==='x'?1:0,dy=wall.axis==='y'?1:0,cuts=[0,wall.length],candidates=[];
+  for(const panel of roofPanels(house)){
+    const interval=lineInterval(panel.points,wall.x,wall.y,dx,dy);
+    if(interval){
+      candidates.push({interval,plane:roofPlane(panel.points)});
+      for(const t of interval)if(t>0&&t<wall.length)cuts.push(t);
+    }
+  }
+  const offsets=[...new Set(cuts.map(t=>+t.toFixed(8)))].sort((a,b)=>a-b);
+  const profile=[];
+  for(let i=0;i<offsets.length-1;i++){
+    const mid=(offsets[i]+offsets[i+1])/2,x=wall.x+dx*mid,y=wall.y+dy*mid;
+    const active=candidates.filter(c=>mid>c.interval[0]-1e-7&&mid<c.interval[1]+1e-7)
+      .sort((a,b)=>planeHeight(b.plane,x,y)-planeHeight(a.plane,x,y))[0];
+    for(const offset of [offsets[i],offsets[i+1]]){
+      const height=active?planeHeight(active.plane,wall.x+dx*offset,wall.y+dy*offset)-.12:EAVE_HEIGHT-.12;
+      const last=profile[profile.length-1];
+      if(!last||Math.abs(last.offset-offset)>1e-7||Math.abs(last.height-height)>1e-7)profile.push({offset,height});
+    }
+  }
+  return profile;
+}
+
+/** Sheet seams / tile courses clipped to the resolved visible roof patches. */
+export function roofDetailSegments(panel) {
+  const points=cleanPolygon(panel.points),plane=roofPlane(points),segments=[];
+  const axis=panel.form==='Intersecting gables'?panel.ridgeAxis:panel.ridgeAxis==='x'?'y':'x';
+  const spacing=panel.form==='Intersecting gables'?.85:.38;
+  const coordinates=points.map(p=>p[axis==='x'?0:1]);
+  const min=Math.min(...coordinates),max=Math.max(...coordinates);
+  for(let value=Math.ceil(min/spacing)*spacing;value<max-1e-6;value+=spacing){
+    const x=axis==='x'?value:0,y=axis==='y'?value:0,dx=axis==='y'?1:0,dy=axis==='x'?1:0;
+    const interval=lineInterval(points,x,y,dx,dy);if(!interval)continue;
+    segments.push(interval.map(t=>{const px=x+dx*t,py=y+dy*t;return [px,py,planeHeight(plane,px,py)+.012];}));
+  }
+  return segments;
+}
+
+/** Close stepped joins and outer eaves; never add full gables inside another roof. */
+export function roofEdgeFaces(house) {
+  if(edgeCache.has(house))return edgeCache.get(house);
+  const panels=roofPanels(house),planes=panels.map(p=>roofPlane(p.points)),faces=[];
+  for(const [i,panel] of panels.entries())for(let e=0;e<panel.points.length;e++){
+    const a=panel.points[e],b=panel.points[(e+1)%panel.points.length],dx=b[0]-a[0],dy=b[1]-a[1],length=Math.hypot(dx,dy);
+    if(length<1e-7)continue;
+    const project=p=>((p[0]-a[0])*dx+(p[1]-a[1])*dy)/(length*length);
+    const onLine=p=>Math.abs(dx*(p[1]-a[1])-dy*(p[0]-a[0]))/length<1e-6;
+    const neighbours=[],cuts=[0,1];
+    for(const [j,other] of panels.entries())if(j!==i)for(let k=0;k<other.points.length;k++){
+      const c=other.points[k],d=other.points[(k+1)%other.points.length];if(!onLine(c)||!onLine(d))continue;
+      const lo=Math.max(0,Math.min(project(c),project(d))),hi=Math.min(1,Math.max(project(c),project(d)));
+      if(hi-lo<1e-7)continue;neighbours.push({j,lo,hi});cuts.push(lo,hi);
+    }
+    const sorted=[...new Set(cuts.map(t=>+t.toFixed(8)))].sort((a,b)=>a-b);
+    for(let k=0;k<sorted.length-1;k++){
+      const lo=sorted[k],hi=sorted[k+1],mid=(lo+hi)/2;
+      const neighbour=neighbours.find(n=>mid>n.lo-1e-7&&mid<n.hi+1e-7);
+      if(neighbour&&i>neighbour.j)continue;
+      const ends=[lo,hi].map(t=>[a[0]+dx*t,a[1]+dy*t]);
+      const top=ends.map(([x,y])=>planeHeight(planes[i],x,y));
+      const other=neighbour?ends.map(([x,y])=>planeHeight(planes[neighbour.j],x,y)):top.map(z=>z-.14);
+      if(neighbour&&Math.max(...top.map((z,n)=>Math.abs(z-other[n])))<1e-6)continue;
+      const bottom=ends.map(([x,y],n)=>[x,y,Math.min(top[n],other[n])]);
+      const upper=ends.map(([x,y],n)=>[x,y,Math.max(top[n],other[n])]);
+      faces.push({type:neighbour?'junction':'fascia',points:[bottom[0],bottom[1],upper[1],upper[0]]});
+    }
+  }
+  edgeCache.set(house,faces);return faces;
 }
