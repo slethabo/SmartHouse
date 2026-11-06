@@ -75,6 +75,6 @@ export function validatePlanForm(p) {
   else if (num(p.floor_area_m2) > 0 && num(p.footprint_m2) > num(p.floor_area_m2) * 1.5) errors.footprint_m2 = 'Footprint looks too large compared to the floor area.';
   if (!(num(p.min_plot_size_m2) > 0)) errors.min_plot_size_m2 = 'Minimum plot size must be greater than 0 m².';
   else if (num(p.footprint_m2) > 0 && num(p.min_plot_size_m2) < num(p.footprint_m2)) errors.min_plot_size_m2 = 'Minimum plot must be at least the footprint size.';
-  if (p.image_url && !/^https?:\/\//i.test(p.image_url.trim())) errors.image_url = 'Image URL must start with http:// or https://';
+  if (p.image_url && !/^(https?:\/\/|\/(?!\/))/i.test(p.image_url.trim())) errors.image_url = 'Image URL must start with http://, https:// or / (a site image).';
   return errors;
 }

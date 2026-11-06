@@ -12,11 +12,23 @@ function fail(message, status = 400, fields = {}) {
   error.status = status; error.fields = fields;
   throw error;
 }
+/** Older saved data predates catalogue photos and features; fill gaps without overwriting admin edits. */
+function withCatalogueMedia(state) {
+  for (const plan of state?.plans || []) {
+    const source = catalogue.find((p) => p.id === plan.id && p.name === plan.name);
+    if (!source) continue;
+    if (!plan.image_url) { plan.image_url = source.image_url; plan.image_credit = source.image_credit; }
+    if (!plan.features) plan.features = source.features;
+  }
+  return state;
+}
 function load(storageKey = STORAGE_KEY) {
   const raw = localStorage.getItem(storageKey);
   if (raw) {
-    try { return JSON.parse(raw); }
+    let state;
+    try { state = JSON.parse(raw); }
     catch { fail('Saved demo data could not be read. Your browser data has not been overwritten.'); }
+    return withCatalogueMedia(state);
   }
   return { projects: [], plans: structuredClone(catalogue), saved: [], rates: { basic: 9500, standard: 12500, premium: 17000 }, lastSearch: null };
 }

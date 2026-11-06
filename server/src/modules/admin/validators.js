@@ -15,7 +15,7 @@ const planSchema = z
       .string()
       .trim()
       .max(2000)
-      .refine((v) => v === '' || /^https?:\/\//i.test(v), 'Image URL must start with http:// or https://')
+      .refine((v) => v === '' || /^(https?:\/\/|\/(?!\/))/i.test(v), 'Image URL must start with http://, https:// or / (a site image).')
       .default(''),
     is_active: z.coerce.boolean().default(true),
   })

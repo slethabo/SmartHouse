@@ -46,6 +46,8 @@ export function PlanForm({ initialValues = EMPTY_PLAN, onSubmit, onCancel, submi
       description: form.description.trim(),
       style: form.style.trim(),
       image_url: form.image_url.trim(),
+      // A credit only describes the photo it came with.
+      image_credit: form.image_url.trim() === (initialValues.image_url || '') ? initialValues.image_credit : undefined,
       bedrooms: Number(form.bedrooms),
       bathrooms: Number(form.bathrooms),
       floors: Number(form.floors),
@@ -77,7 +79,7 @@ export function PlanForm({ initialValues = EMPTY_PLAN, onSubmit, onCancel, submi
         <FormField label={s.footprint} type="number" min="1" step="0.5" suffix={area} value={form.footprint_m2} onChange={update('footprint_m2')} error={err('footprint_m2')} required />
         <FormField label={s.minPlot} type="number" min="1" step="1" suffix={area} value={form.min_plot_size_m2} onChange={update('min_plot_size_m2')} error={err('min_plot_size_m2')} required />
       </div>
-      <FormField label={s.imageUrl} optional type="url" hint={s.imageHint} value={form.image_url} onChange={update('image_url')} error={err('image_url')} placeholder="https://" />
+      <FormField label={s.imageUrl} optional type="text" inputMode="url" hint={s.imageHint} value={form.image_url} onChange={update('image_url')} error={err('image_url')} placeholder="https://" />
       <div className="field">
         <label className="checkbox">
           <input type="checkbox" checked={Boolean(form.is_active)} onChange={update('is_active')} />

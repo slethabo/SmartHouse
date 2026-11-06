@@ -118,9 +118,32 @@ export function PlanDetailPage() {
       />
 
       <div className="detail-hero">
-        <div className="detail-hero__media">
-          <PlanImage src={plan.image_url} alt={`${plan.name} – ${plan.style} house design`} />
-        </div>
+        <figure className="detail-hero__figure">
+          <div className="detail-hero__media">
+            <PlanImage src={plan.image_url} alt={`${plan.name} – ${plan.style} house design`} />
+          </div>
+          {plan.image_url && plan.image_credit && (
+            <figcaption className="detail-hero__credit">
+              {STRINGS.plan.photoNote} {STRINGS.plan.photoCredit}:{' '}
+              <a href={plan.image_credit.source_url} target="_blank" rel="noopener noreferrer">
+                {plan.image_credit.author}
+              </a>
+              {plan.image_credit.license && (
+                <>
+                  {', '}
+                  {plan.image_credit.license_url ? (
+                    <a href={plan.image_credit.license_url} target="_blank" rel="noopener noreferrer license">
+                      {plan.image_credit.license}
+                    </a>
+                  ) : (
+                    plan.image_credit.license
+                  )}
+                </>
+              )}
+              , via Wikimedia Commons.
+            </figcaption>
+          )}
+        </figure>
         <div className="card">
           <div className="flex flex--between">
             <span className="badge badge--muted">{plan.style}</span>
@@ -138,6 +161,18 @@ export function PlanDetailPage() {
             {STRINGS.plan.about}
           </h2>
           <p className="text-muted">{plan.description}</p>
+          {plan.features?.length > 0 && (
+            <>
+              <h2 className="card__title" style={{ fontSize: 'var(--text-md)' }}>
+                {STRINGS.plan.features}
+              </h2>
+              <ul className="feature-list">
+                {plan.features.map((f) => (
+                  <li key={f}>{f}</li>
+                ))}
+              </ul>
+            </>
+          )}
         </div>
       </div>
 
