@@ -1,5 +1,21 @@
 # Frontend Prototype Progress
 
+## Latest: low-cost estimate calibration
+
+The Basic finish now uses AprIQ's published 2026 low-cost single-dwelling base
+rate of R4,500/m² instead of the former R6,500/m² economic-build proxy. The
+published labour-share range remains 25–30% of base construction, so the
+prototype uses the lower 25% share rather than applying an unsupported R100,000
+cap. For a 115.26 m² concept this is approximately R129,668 in indicative
+labour. It is a planning allowance, not a local contractor quote.
+
+Material line items and the remaining unpriced-material allowance are now
+visually grouped under one Materials and finishes category total to avoid
+counting those nested amounts twice. The rough estimate excludes contractor
+profit, preliminaries/general, VAT, land, site works and permit costs; actual
+scope and location require local professional pricing. See the sourced
+[benchmark data](../client/src/demo/material_price_benchmarks.json).
+
 ## Latest: one, two and three storeys
 
 The consultation, generated geometry, per-floor plans, interactive 3D inspection,

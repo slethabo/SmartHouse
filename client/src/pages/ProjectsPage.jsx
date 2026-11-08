@@ -161,8 +161,15 @@ export function ConsultationPage() {
     } finally { setBusy(false); }
   }
   function change(q, value) {
-    setAnswers((a) => { const next = { ...a }; if (value === '') delete next[q.key]; else next[q.key] = q.type === 'number' ? Number(value) : value; return next; });
-    setDirty(true); setAcknowledged(false); setMessage(''); setError(''); setFields((f) => ({ ...f, [q.key]: undefined }));
+    const nextAnswers = { ...answers };
+    if (value === '') delete nextAnswers[q.key];
+    else nextAnswers[q.key] = q.type === 'number' ? Number(value) : value;
+    setAnswers(nextAnswers);
+    setDirty(true); setAcknowledged(false); setMessage(''); setError('');
+    const budgetError = q.key === 'budget'
+      ? validateConsultation(config.steps, nextAnswers).budget
+      : undefined;
+    setFields((f) => ({ ...f, [q.key]: budgetError }));
   }
   if (!config || !project) return <div className="studio studio-panel studio-empty"><Icon name={error ? 'alert' : 'refresh'} size={32} /><h1>{error ? 'Open your saved workspace.' : 'Opening your project...'}</h1><p role={error ? 'alert' : 'status'}>{error || 'Loading your saved consultation.'}</p>{error && <Button onClick={() => setRetry((n) => n + 1)}>Try again</Button>}<Link to="/">Back to projects</Link></div>;
   const review = step === config.steps.length;

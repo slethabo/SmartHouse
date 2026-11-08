@@ -51,10 +51,10 @@
           "key": "budget",
           "label": "Construction budget (ZAR)",
           "type": "number",
-          "min": 1,
+          "min": 120001,
           "max": 100000000,
           "required": true,
-          "hint": "Enter the amount available for construction in Rand, excluding the price of buying the land."
+          "hint": "Enter more than R120,000 available for construction, excluding the price of buying the land."
         },
         {
           "key": "spaceLevel",
