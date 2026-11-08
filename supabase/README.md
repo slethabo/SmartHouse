@@ -210,3 +210,12 @@ The upgrade is tested on an isolated database, not applied to the hosted project
 by this change. Store `totalFloorArea` as concept/estimate floor area and retain
 `footprintArea` separately inside geometry. Schema 6 includes `floors`, `stairs`,
 `roofPlans`, `floorHeight` and additional-storey allowance assumptions.
+
+## Removed plot shape/terrain questions
+
+The consultation no longer asks for plot `shape` or `terrain`. Databases installed
+before that change still reject confirmation ("the confirmation service still
+expects questions that were removed"). Run
+[upgrade-remove-shape-terrain.sql](upgrade-remove-shape-terrain.sql) once in the
+SQL Editor. It replaces only the confirmation validator, changes no data or
+policies, and is safe to rerun. New installations from `schema.sql` do not need it.

@@ -61,6 +61,8 @@ async function main() {
     await db.query(fs.readFileSync(path.join(root,'verify.sql'),'utf8'));
     await db.query(fs.readFileSync(path.join(root,'upgrade-multi-storey.sql'),'utf8'));
     await db.query(fs.readFileSync(path.join(root,'upgrade-multi-storey.sql'),'utf8'));
+    await db.query(fs.readFileSync(path.join(root,'upgrade-remove-shape-terrain.sql'),'utf8'));
+    await db.query(fs.readFileSync(path.join(root,'upgrade-remove-shape-terrain.sql'),'utf8'));
     check('schema/storage SQL and security audit execute successfully');
     assert.equal((await db.query('select count(*)::int n from public.profiles')).rows[0].n,1);
     check('existing Auth users are backfilled');
