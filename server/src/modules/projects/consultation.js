@@ -9,7 +9,7 @@ const steps = [
     { key: 'access', label: 'Which edge has road access?', options: ['North', 'South', 'East', 'West', 'Unknown'], required: true },
   ] },
   { title: 'Budget and household', questions: [
-    { key: 'budget', label: 'Construction budget (ZAR)', type: 'number', min: 1, max: 100000000, required: true },
+    { key: 'budget', label: 'Construction budget (ZAR)', type: 'number', min: 120001, max: 100000000, required: true },
     { key: 'finish', label: 'Preferred finishes', options: ['Basic', 'Standard', 'Premium'], required: true },
     { key: 'budgetIncludes', label: 'What does your budget include?', type: 'multiselect', options: ['Labour', 'Materials', 'Site preparation', 'Professional fees', 'Landscaping', 'Contingency'], required: true, hint: 'Select all that apply.' },
     { key: 'occupants', label: 'How many people will live here?', type: 'number', min: 1, max: 30, required: true },

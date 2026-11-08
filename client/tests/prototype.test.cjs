@@ -80,6 +80,9 @@ test('step validation catches missing checkbox selections and whitespace while d
   assert.equal(required.budgetIncludes, 'Select at least one option.');
   assert.ok(validateConsultation([questionnaire.steps[0]], { ...answers, location: '   ' }, { complete: true }).location);
   assert.ok(validateConsultation(questionnaire.steps, { ...answers, bedrooms: 2.5 }).bedrooms);
+  assert.ok(validateConsultation(questionnaire.steps, { ...answers, budget: 119999 }).budget, 'Budget below the minimum should fail without requiring form completion.');
+  assert.ok(validateConsultation(questionnaire.steps, { ...answers, budget: 120000 }).budget, 'Budget must be greater than R120,000.');
+  assert.equal(validateConsultation(questionnaire.steps, { ...answers, budget: 120001 }).budget, undefined);
   assert.ok(validateConsultation(questionnaire.steps, { ...answers, budgetIncludes: ['Labour', 'Labour'] }).budgetIncludes);
   assert.equal(validateConsultation(questionnaire.steps, { ...answers, width: 20.5 }).width, undefined);
 });
@@ -184,7 +187,9 @@ test('catalogue and researched material prices are itemized and sum to the estim
   assert.equal(estimate.catalogueSubtotal, catalogueLines.reduce((sum, line) => sum + (line.total || 0), 0));
   assert.equal(estimate.researchedMaterialsSubtotal, researchLines.reduce((sum, line) => sum + line.total, 0));
   assert.equal(estimate.pricedMaterialsSubtotal, estimate.catalogueSubtotal + estimate.researchedMaterialsSubtotal);
+  assert.equal(benchmarks.rates.constructionCosts.finishRatesPerM2.basic.unitPrice, 4500);
   assert.equal(estimate.constructionBase, Math.round(house.footprintArea * benchmarks.rates.constructionCosts.finishRatesPerM2.basic.unitPrice));
+  assert.equal(estimate.categories.find((category) => category.key === 'labour').total, Math.round(estimate.constructionBase * benchmarks.rates.constructionCosts.costShares.labour));
   assert.equal(estimate.materialsAllocation, Math.round(estimate.constructionBase * benchmarks.rates.constructionCosts.costShares.materials));
   assert.equal(estimate.otherMaterialsAndFinishes, Math.max(0, estimate.materialsAllocation - estimate.pricedMaterialsSubtotal));
   assert.equal(estimate.categories[0].total, Math.max(estimate.materialsAllocation, estimate.pricedMaterialsSubtotal));

@@ -132,7 +132,7 @@ export function HouseConceptPage({ brief }) {
             <div key={label}><Icon name={icon} /><dt>{label}</dt><dd>{value}</dd></div>)}
         </dl>
         <div className="hc-price"><span>ILLUSTRATIVE CONSTRUCTION ESTIMATE</span><strong>{estimate ? money(estimate.total) : priceDataState.error ? 'Estimate unavailable' : 'Loading material prices…'}</strong>
-          <small>Includes materials, finishes, labour, services, professional fees and contingency using conservative South African benchmarks.</small>
+          <small>{estimate?.constructionRateLabel || 'South African construction'} benchmark; not a quote. See the breakdown for assumptions and excluded project costs.</small>
           <a className="hc-price-breakdown-link" href={`#${id}-costs`}>View detailed price breakdown <Icon name="arrowRight" size={16} /></a>
         </div>
         {estimate

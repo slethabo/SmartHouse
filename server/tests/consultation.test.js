@@ -22,6 +22,9 @@ test('shape and terrain are not questionnaire inputs; brief states its site assu
 test('partial drafts allowed; unknown fields and invalid dimensions rejected', () => {
   expect(answerSchema.safeParse({ width: 20.5 }).success).toBe(true);
   expect(answerSchema.safeParse({ width: -1 }).success).toBe(false);
+  expect(answerSchema.safeParse({ budget: 119999 }).success).toBe(false);
+  expect(answerSchema.safeParse({ budget: 120000 }).success).toBe(false);
+  expect(answerSchema.safeParse({ budget: 120001 }).success).toBe(true);
   expect(answerSchema.safeParse({ owner_id: 2 }).success).toBe(false);
   expect(() => buildBrief({})).toThrow('Complete the required questions');
 });

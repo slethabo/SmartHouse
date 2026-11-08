@@ -97,6 +97,8 @@
 .hc-cost-lines dt { color: #62705b; }
 .hc-cost-lines dt small { font-size: .61rem; margin-left: 7px; color: #748065; }
 .hc-cost-lines dd { margin: 0; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.hc-cost-lines .hc-cost-category { font-weight: 650; color: #294731; }
+.hc-cost-lines .hc-cost-subline { padding: 5px 0 5px 18px; border-bottom: 0; color: #748065; font-size: .68rem; }
 .hc-cost-lines .hc-cost-total { padding: 16px 0; border-bottom: none; font-weight: 650; font-size: .96rem; }
 .hc-cost-total dt { color: #294731; }
 .hc-section .hc-fine-print, .hc-fine-print { font-size: .68rem; line-height: 1.8; color: #68735f; }

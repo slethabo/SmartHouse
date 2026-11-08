@@ -1,6 +1,6 @@
 # Elam Development Process
 
-This document records the SmartHouse changes discussed and completed in this development thread, their implementation areas, validation, and known follow-up work. It describes the repository state checked on 3 November 2026.
+This document records the SmartHouse changes discussed and completed in this development thread, their implementation areas, validation, and known follow-up work. It describes the repository state checked on 6 November 2026.
 
 ## 1. Budget inclusions questionnaire
 
@@ -22,15 +22,15 @@ The selections are recorded in the brief, but are not treated as a guarantee tha
 The house concept is generated from questionnaire answers and floor-plan data. The main flow is:
 
 1. Questionnaire answers are validated and saved.
-2. `client/src/demo/layout.js` creates a concept using the selected layout and room requirements.
+2. `client/src/demo/datasetLayout.js` selects a source-plan family and creates a concept using the requested rooms and layout.
 3. The generated house data is passed to the gallery and model components.
 4. `client/src/demo/houseModel.js` builds the procedural Three.js model.
 
-The work expanded the layout and modelling system so supported preferences influence the generated house rather than only changing a palette. This includes room counts, kitchen arrangement, office/workspace requests, windows and doors, and architectural/roof selections where supported. Reusable architectural configuration is in `client/src/demo/architecturalStyles.js`.
+The layout and modelling system supports room counts, kitchen arrangement, office/workspace requests, windows and doors, and architectural/roof selections. Reusable roof and geometry logic is in `client/src/demo/architecture.js`.
 
-The roof-system update added an “Automatic”, “Intersecting gables”, or “Multi-hip” choice. Automatic selection follows the architectural style. Roof sections are derived from the generated room footprint, and the model and roof tests check room coverage, cutaway behavior, and geometry validity.
+The prototype supports one-, two-, and three-storey homes. `client/src/demo/multiStorey.js` creates stacked layouts, stairs, and floor plates; `client/src/components/plans/MultiStoreyDrawing.jsx` is reused for multi-storey elevations and previews. The roof-system update added an “Automatic”, “Intersecting gables”, or “Multi-hip” choice. Automatic selection follows the architectural style. Roof sections are derived from the generated room footprint, and the model and roof tests check room coverage, cutaway behavior, and geometry validity.
 
-The interactive viewer continues to use Three.js and the shared generated house model. Model cleanup/disposal and existing viewing controls are retained.
+The questionnaire no longer asks users to select plot shape or slope. Generated briefs state a flat, rectangular plot assumption, and retain that assumption for single- and multi-storey projects. The interactive viewer continues to use Three.js and the shared generated house model. Model cleanup/disposal and existing viewing controls are retained.
 
 ## 3. Price estimation and itemized disclosure
 
@@ -43,11 +43,13 @@ The estimator uses two local data sources:
 
 The first correction removed an unsupported residual-per-square-metre allowance, but it temporarily made the estimate priced-materials-only and excluded labour, services and other work. That interim behavior has now been replaced: the estimate uses a conservative South African base construction rate for the selected Basic, Standard or Premium finish, then adds lower-end professional-fee and contingency shares. Materials, labour and direct services are split within the base rate. The benchmark file records the rates, sources, assumptions and shares.
 
-Catalogue and researched material line totals are deducted from the materials allocation; they are not added on top of it. The remaining materials allocation covers materials and finishes without individual fixed prices. If individually priced materials exceed that allocation, only the excess is added. The breakdown also includes labour, services and specialist work, professional fees/compliance, and contingency, and its category rows sum exactly to the displayed estimate. This remains an early planning estimate, not a supplier quote or a quantity-surveyor estimate.
+Catalogue and researched material line totals are deducted from the materials allocation; they are not added on top of it. The remaining materials allocation covers materials and finishes without individual fixed prices. If individually priced materials exceed that allocation, only the excess is added. The breakdown also includes labour, services and specialist work, professional fees/compliance, and contingency. For multi-storey plans, the stairs and upper-level structure are shown as separate prototype allowances; the category totals plus those allowances sum to the displayed estimate. This remains an early planning estimate, not a supplier quote or a quantity-surveyor estimate.
+
+After reviewing the sample estimate, the Basic rate was researched and lowered from R6,500/m² to AprIQ's published R4,500/m² 2026 low-cost single-dwelling base rate. The labour share remains at 25%, the lower end of the published 25–30% range; it is not capped at R100,000 without a project-specific quote. On the supplied 115.26 m² example, that gives about R129,668 indicative labour and reduces the estimated total from R899,028 to R622,404. The material allocation decreases accordingly. The individual material lines and remaining allowance are shown as details within the single materials category total, not as additional totals. The estimate explicitly excludes contractor profit, preliminaries/general, VAT, land, site works and permits.
 
 The concept page has a collapsed disclosure immediately below the estimated amount, labeled **“View detailed price breakdown.”** It expands to show material quantities, unit rates, line totals, assumptions, catalogue SKUs or research sources, the construction-rate method and sources, and the category totals. The estimate and methodology are included in the downloaded concept data.
 
-## 4. Branch merge and reported build errors
+## 4. Branch integration and reported build errors
 
 Estimator work was committed on `elam-development` as `0442b78` (`Add researched material pricing to estimates`). It was then merged into `main` as `5f578c9` (`Merge estimator pricing into main`), preserving `main`’s newer dataset-based house layout and excluding unrelated 3D work from that estimator merge.
 
@@ -55,22 +57,20 @@ After a later rebase, Vite reported a JSX parse error because conflict markers r
 
 These repairs were committed as `38fa018` (`fixed merging conflicts`). The user-requested price disclosure wording and styling are present in the current page and stylesheet.
 
+On 6 November, `main` was rebased onto the latest `origin/main` while preserving the three local pricing commits. Pricing changes were reconciled with the incoming multi-storey layout and drawings, and the estimator and regression tests were updated to use the current three-argument estimator API. The pull also brought dependency updates, removal of plot-shape/slope questionnaire options, and related documentation changes. The subsequent “Preserve site assumptions across storey counts” change fixed single-storey assumption wording for multi-storey briefs and added regression coverage. The latest `fix login` change maps lazy-loaded pages with named exports to their default exports so React Router can load them correctly.
+
 ## 5. Verification
 
-The latest checks completed after the conflict and estimator fixes:
+- `npm run test:prototype` — 32 tests passed, including multi-storey layout, model, and estimate checks.
+- `npm run lint --workspace client` — passed after the estimate update.
+- `npm test --workspace server -- --runInBand tests/consultation.test.js` — 5 tests passed, including single- and multi-storey site assumptions.
+- `npm run build` — passed with the revised estimate disclosure.
+- The production build still warns that some JavaScript chunks exceed 500 kB; this does not fail the build.
 
-- `npm run test:prototype` — 28 tests passed.
-- `npm run lint --workspace client` — passed.
-- `npm run build --workspace client` — passed.
-- Conflict-marker search — no remaining markers in source files.
-- The browser preview was used to open the price disclosure and confirm it showed catalogue and researched price lines.
-
-The production build still prints a warning about JavaScript chunks larger than 500 kB. This did not fail the build and was not changed as part of this work. An earlier `npm install` also reported dependency audit findings; no broad dependency upgrades were made for this task.
+The dependency update was part of the upstream changes. `npm install` reported six low-severity audit findings; no forced audit fix was applied.
 
 ## 6. Current repository state and follow-up
 
-At the time this document was prepared, `main` was at `38fa018`, matched `origin/main`, and had no pre-existing worktree changes. This document is a new, untracked file until the user chooses to stage it. No changes were staged or committed as part of writing this document.
+Before this documentation edit, `main` was at `1eb19f0` (`fix login`), matched `origin/main`, and had a clean worktree. `.env` remains ignored and untracked. This document is tracked; the update is currently unstaged.
 
-After that check, the area-rate top-up was removed from the catalogue estimator because it could make the unpriced-cost line misleadingly large. The priced-material estimate now excludes unsupported unpriced costs. This follow-up change has not been committed.
-
-The requested visual consistency between the front, side, and perspective gallery drawings and the interactive Three.js model remains a follow-up: the current gallery still renders `HouseElevation` for front and side views and `HousePreview` for perspective, while the interactive view renders `House3DView`. These drawings share the generated house data but are not currently rendered from the same Three.js geometry.
+Multi-storey elevations and previews now use the shared `MultiStoreyDrawing` SVG component, but gallery drawings and the interactive viewer are still rendered by separate SVG and Three.js implementations. Rendering every gallery view from the same Three.js geometry remains a possible follow-up.
